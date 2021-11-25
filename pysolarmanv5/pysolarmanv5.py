@@ -158,17 +158,27 @@ class PySolarmanV5:
         
         return response
 
-    def read_input_registers(self, register_addr, quantity, **kwargs):
-        """Read input registers from modbus slave and return value (Modbus function code 0x4)"""
+    def read_input_registers(self, register_addr, quantity):
+        """Read input registers from modbus slave and return list of register values (Modbus function code 0x4)"""
         mb_request_frame = rtu.read_input_registers(self.mb_slave_id, register_addr, quantity)
         modbus_values = self._get_modbus_response(mb_request_frame)
+        return modbus_values
+
+    def read_holding_registers(self, register_addr, quantity):
+        """Read holding registers from modbus slave and return list of register values (Modbus function code 0x3)"""
+        mb_request_frame = rtu.read_holding_registers(self.mb_slave_id, register_addr, quantity)
+        modbus_values = self._get_modbus_response(mb_request_frame)
+        return modbus_values
+
+    def read_input_register_formatted(self, register_addr, quantity, **kwargs):
+        """Read input registers from modbus slave and return single value (Modbus function code 0x4)"""
+        modbus_values = self.read_input_registers(register_addr, quantity)
         value = self._format_response(modbus_values, **kwargs)
         return value
 
-    def read_holding_registers(self, register_addr, quantity, **kwargs):
-        """Read holding registers from modbus slave and return value (Modbus function code 0x3)"""
-        mb_request_frame = rtu.read_holding_registers(self.mb_slave_id, register_addr, quantity)
-        modbus_values = self._get_modbus_response(mb_request_frame)
+    def read_holding_register_formatted(self, register_addr, quantity, **kwargs):
+        """Read holding registers from modbus slave and return single value (Modbus function code 0x3)"""
+        modbus_values = self.read_holding_registers(register_addr, quantity)
         value = self._format_response(modbus_values, **kwargs)
         return value
 
