@@ -137,7 +137,8 @@ class PySolarmanV5:
         """Formats a list of modbus register values (16 bits each) as a single value"""
         scale = kwargs.get('scale', 1)
         signed = kwargs.get('signed', 0)
-        bitmask = kwargs.get('bitmask', -0xFFFFFFFF)
+        bitmask = kwargs.get('bitmask', None)
+        bitshift = kwargs.get('bitshift', None)
         response = 0
         num_registers = len(modbus_values)
 
@@ -148,12 +149,12 @@ class PySolarmanV5:
             response = self.twos_complement(response, num_registers * 16)
 
         response *= scale
-        
-        #TODO
-        # Need to think further about this. Using a standard bitmask of
-        # 0xFFFFFFFF doesn't work for 2s compliment numbers
-        
-        # response = response & bitmask
+
+        if bitmask is not None:
+            response &= bitmask
+
+        if bitshift is not None:
+            response >>= bitshift
         
         return response
 
