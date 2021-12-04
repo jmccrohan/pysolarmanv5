@@ -171,7 +171,7 @@ class PySolarmanV5:
         return response
 
     def read_input_registers(self, register_addr, quantity):
-        """Read input registers from modbus slave and return list of register values (Modbus function code 0x4)"""
+        """Read input registers from modbus slave and return list of register values (Modbus function code 4)"""
         mb_request_frame = rtu.read_input_registers(
             self.mb_slave_id, register_addr, quantity
         )
@@ -179,7 +179,7 @@ class PySolarmanV5:
         return modbus_values
 
     def read_holding_registers(self, register_addr, quantity):
-        """Read holding registers from modbus slave and return list of register values (Modbus function code 0x3)"""
+        """Read holding registers from modbus slave and return list of register values (Modbus function code 3)"""
         mb_request_frame = rtu.read_holding_registers(
             self.mb_slave_id, register_addr, quantity
         )
@@ -187,19 +187,19 @@ class PySolarmanV5:
         return modbus_values
 
     def read_input_register_formatted(self, register_addr, quantity, **kwargs):
-        """Read input registers from modbus slave and return single value (Modbus function code 0x4)"""
+        """Read input registers from modbus slave and return single value (Modbus function code 4)"""
         modbus_values = self.read_input_registers(register_addr, quantity)
         value = self._format_response(modbus_values, **kwargs)
         return value
 
     def read_holding_register_formatted(self, register_addr, quantity, **kwargs):
-        """Read holding registers from modbus slave and return single value (Modbus function code 0x3)"""
+        """Read holding registers from modbus slave and return single value (Modbus function code 3)"""
         modbus_values = self.read_holding_registers(register_addr, quantity)
         value = self._format_response(modbus_values, **kwargs)
         return value
 
     def write_holding_register(self, register_addr, value, **kwargs):
-        """Write a single holding register to modbus slave (Modbus function code 0x6)"""
+        """Write a single holding register to modbus slave (Modbus function code 6)"""
         mb_request_frame = rtu.write_single_register(
             self.mb_slave_id, register_addr, value
         )
