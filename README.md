@@ -7,6 +7,14 @@ Solarman v5 protocol and requests sent to the data logger on port tcp/8899.
 This module aims to simplfy the Solarman v5 protocol, exposing interfaces
 similar to that of the uModbus library.
 
+The following Modbus RTU Function Codes are supported:
+|Function Code|Descripton|
+|---|---|
+|3|Read Holding Registers|
+|4|Read Input Registers|
+|6|Write Single Holding Register|
+|16|Write Multiple Holding Registers|
+
 Details of the Solarman v5 protocol have been based on the excellent work of
 [Inverter-Data-Logger by XtheOne](https://github.com/XtheOne/Inverter-Data-Logger/)
 and others.
