@@ -206,3 +206,11 @@ class PySolarmanV5:
         modbus_values = self._get_modbus_response(mb_request_frame)
         value = self._format_response(modbus_values, **kwargs)
         return value
+
+    def write_multiple_holding_registers(self, register_addr, values):
+        """Write list of multiple values to series of holding registers to modbus slave (Modbus function code 16)"""
+        mb_request_frame = rtu.write_multiple_registers(
+            self.mb_slave_id, register_addr, values
+        )
+        modbus_values = self._get_modbus_response(mb_request_frame)
+        return modbus_values
