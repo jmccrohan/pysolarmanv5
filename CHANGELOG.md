@@ -1,10 +1,14 @@
 # Changelog
 
-## UNRELEASED
+## [v2.0.1] - 2021-12-29
 
 ### Added
 
 - Add Add write_multiple_holding_registers() - function code 16
+
+### Changed
+
+- Minor typo fixes
 
 ## [v2.0.0] - 2021-11-25
 

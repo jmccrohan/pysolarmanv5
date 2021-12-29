@@ -4,11 +4,11 @@ This is a Python module to interact with Solarman (IGEN-Tech) v5 based solar
 inverter data loggers. Modbus RTU frames can be encapsulated in the proprietary
 Solarman v5 protocol and requests sent to the data logger on port tcp/8899.
 
-This module aims to simplfy the Solarman v5 protocol, exposing interfaces
+This module aims to simplify the Solarman v5 protocol, exposing interfaces
 similar to that of the uModbus library.
 
 The following Modbus RTU Function Codes are supported:
-|Function Code|Descripton|
+|Function Code|Description|
 |---|---|
 |3|Read Holding Registers|
 |4|Read Input Registers|
