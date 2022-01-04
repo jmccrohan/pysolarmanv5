@@ -1,10 +1,16 @@
 # Changelog
 
+## [v2.1.0] - 2022-01-04
+
+### Changed
+
+- Add more robust validation for V5 frame replies
+
 ## [v2.0.1] - 2021-12-29
 
 ### Added
 
-- Add Add write_multiple_holding_registers() - function code 16
+- Add write_multiple_holding_registers() - function code 16
 
 ### Changed
 
