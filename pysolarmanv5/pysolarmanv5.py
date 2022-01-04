@@ -7,6 +7,10 @@ import binascii
 from umodbus.client.serial import rtu
 
 
+class V5FrameError(Exception):
+    pass
+
+
 class PySolarmanV5:
     """
     pysolarmanv5.py
@@ -89,20 +93,44 @@ class PySolarmanV5:
     def _v5_frame_decoder(self, v5_frame):
         """Decodes a V5 data logging stick frame and returns a modbus RTU frame
 
-        Validate the head, checksum and end values
+        Modbus RTU frame will start at position 25 through len(v5_frame)-2, and
+        will be immediately preceded by 0x61 (at position 24)
 
-        Modbus RTU frame will start at position 25 through len(v5_frame)-2
+        Validate the following:
+        1) V5 header and trailer are correct (0xA5 and 0x15 respectively)
+        2) V5 checksum is correct
+        3) V5 data logger serial number is correct (in most (all?) instances the
+           reply is correct, but request is incorrect)
+        4) V5 datafield contains the correct prefix (0x02 in byte 11)
+        5) Modbus RTU frame contains the correct prefix (0x61 in byte 24)
+        6) Modbus RTU frame length is at least 5 bytes (vast majority of RTU
+           frames will be >=6 bytes, but valid 5 byte error/exception RTU frames
+           are possible)
         """
-
         frame_len = len(v5_frame)
-        if (
-            (bytes([v5_frame[0]]) != self.v5_start)
-            or (bytes([v5_frame[frame_len - 1]]) != self.v5_end)
-            or (v5_frame[frame_len - 2] != self._calculate_v5_frame_checksum(v5_frame))
+
+        if (bytes([v5_frame[0]]) != self.v5_start) or (
+            bytes([v5_frame[frame_len - 1]]) != self.v5_end
         ):
-            raise V5FrameError("Error decoding V5 frame")
+            raise V5FrameError("V5 frame contains invalid header or trailer values")
+
+        if v5_frame[frame_len - 2] != self._calculate_v5_frame_checksum(v5_frame):
+            raise V5FrameError("V5 frame contains invalid V5 checksum")
+
+        if v5_frame[7:11] != self.v5_loggerserial:
+            raise V5FrameError("V5 frame contains incorrect data logger serial number")
+
+        if bytes([v5_frame[11]]) != binascii.unhexlify("02"):
+            raise V5FrameError("V5 frame contains invalid datafield prefix")
+
+        if bytes([v5_frame[24]]) != binascii.unhexlify("61"):
+            raise V5FrameError("V5 frame contains invalid a Modbus RTU frame prefix")
 
         modbus_frame = v5_frame[25 : frame_len - 2]
+
+        if len(modbus_frame) < 5:
+            raise V5FrameError("V5 frame does not contain a valid Modbus RTU frame")
+
         return modbus_frame
 
     def _send_receive_v5_frame(self, data_logging_stick_frame):
