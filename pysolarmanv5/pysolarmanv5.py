@@ -242,3 +242,17 @@ class PySolarmanV5:
         )
         modbus_values = self._get_modbus_response(mb_request_frame)
         return modbus_values
+
+    def send_raw_modbus_frame(self, mb_request_frame):
+        """Send raw modbus frame and return modbus response frame
+
+        Wrapper for internal method _send_receive_modbus_frame()
+        """
+        return self._send_receive_modbus_frame(mb_request_frame)
+
+    def send_raw_modbus_frame_parsed(self, mb_request_frame):
+        """Send raw modbus frame and return parsed modbusresponse list
+
+        Wrapper around internal method _get_modbus_response()
+        """
+        return self._get_modbus_response(mb_request_frame)
