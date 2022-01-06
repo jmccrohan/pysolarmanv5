@@ -55,16 +55,16 @@ class PySolarmanV5:
         https://github.com/XtheOne/Inverter-Data-Logger/issues/3#issuecomment-878911661
         https://github.com/XtheOne/Inverter-Data-Logger/blob/Experimental_Frame_Version_5_support/InverterLib.py#L48
         """
-        self.v5_start = binascii.unhexlify("A5")
-        self.v5_length = binascii.unhexlify("1700")
-        self.v5_controlcode = binascii.unhexlify("1045")
-        self.v5_serial = binascii.unhexlify("0000")
+        self.v5_start = bytes.fromhex("A5")
+        self.v5_length = bytes.fromhex("1700")
+        self.v5_controlcode = bytes.fromhex("1045")
+        self.v5_serial = bytes.fromhex("0000")
         self.v5_loggerserial = struct.unpack(">I", struct.pack("<I", int(self.serial)))[
             0
         ].to_bytes(4, byteorder="big")
-        self.v5_datafield = binascii.unhexlify("020000000000000000000000000000")
-        self.v5_checksum = binascii.unhexlify("00")
-        self.v5_end = binascii.unhexlify("15")  # Logger End code
+        self.v5_datafield = bytes.fromhex("020000000000000000000000000000")
+        self.v5_checksum = bytes.fromhex("00")
+        self.v5_end = bytes.fromhex("15")  # Logger End code
 
     @staticmethod
     def _calculate_v5_frame_checksum(frame):
@@ -109,8 +109,8 @@ class PySolarmanV5:
         """
         frame_len = len(v5_frame)
 
-        if (bytes([v5_frame[0]]) != self.v5_start) or (
-            bytes([v5_frame[frame_len - 1]]) != self.v5_end
+        if (v5_frame[0] != int.from_bytes(self.v5_start, byteorder="big")) or (
+            v5_frame[frame_len - 1] != int.from_bytes(self.v5_end, byteorder="big")
         ):
             raise V5FrameError("V5 frame contains invalid header or trailer values")
 
@@ -120,10 +120,10 @@ class PySolarmanV5:
         if v5_frame[7:11] != self.v5_loggerserial:
             raise V5FrameError("V5 frame contains incorrect data logger serial number")
 
-        if bytes([v5_frame[11]]) != binascii.unhexlify("02"):
+        if v5_frame[11] != int("02", 16):
             raise V5FrameError("V5 frame contains invalid datafield prefix")
 
-        if bytes([v5_frame[24]]) != binascii.unhexlify("61"):
+        if v5_frame[24] != int("61", 16):
             raise V5FrameError("V5 frame contains invalid a Modbus RTU frame prefix")
 
         modbus_frame = v5_frame[25 : frame_len - 2]
@@ -139,11 +139,11 @@ class PySolarmanV5:
             print("SENT: " + str(binascii.hexlify(data_logging_stick_frame, b" ")))
 
         self.sock.sendall(data_logging_stick_frame)
-        data = self.sock.recv(1024)
+        v5_response = self.sock.recv(1024)
 
         if self.verbose == 1:
-            print("RECD: " + str(binascii.hexlify(data, b" ")))
-        return data
+            print("RECD: " + str(binascii.hexlify(v5_response, b" ")))
+        return v5_response
 
     def _send_receive_modbus_frame(self, mb_request_frame):
         """Encodes mb_frame, sends/receives v5_frame, decodes response"""
