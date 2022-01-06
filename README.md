@@ -8,12 +8,12 @@ This module aims to simplify the Solarman v5 protocol, exposing interfaces
 similar to that of the uModbus library.
 
 The following Modbus RTU Function Codes are supported:
-|Function Code|Description|
-|---|---|
-|3|Read Holding Registers|
-|4|Read Input Registers|
-|6|Write Single Holding Register|
-|16|Write Multiple Holding Registers|
+|Modbus Function Code|Description|pysolarmanv5 Function|
+|---|---|---|
+|3|Read Holding Registers|[read_holding_registers(register_addr, quantity)](https://github.com/jmccrohan/pysolarmanv5/blob/f6f520f154c8ae3de372f94ca9246ef04556239a/pysolarmanv5/pysolarmanv5.py#L209)
+|4|Read Input Registers|[read_input_registers(register_addr, quantity)](https://github.com/jmccrohan/pysolarmanv5/blob/f6f520f154c8ae3de372f94ca9246ef04556239a/pysolarmanv5/pysolarmanv5.py#L201)
+|6|Write Single Holding Register|[write_holding_register(register_addr, value)](https://github.com/jmccrohan/pysolarmanv5/blob/f6f520f154c8ae3de372f94ca9246ef04556239a/pysolarmanv5/pysolarmanv5.py#L229)|
+|16|Write Multiple Holding Registers|[write_multiple_holding_registers(register_addr, values)](https://github.com/jmccrohan/pysolarmanv5/blob/f6f520f154c8ae3de372f94ca9246ef04556239a/pysolarmanv5/pysolarmanv5.py#L238)|
 
 Details of the Solarman v5 protocol have been based on the excellent work of
 [Inverter-Data-Logger by XtheOne](https://github.com/XtheOne/Inverter-Data-Logger/)
