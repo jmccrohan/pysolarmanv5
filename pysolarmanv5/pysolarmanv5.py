@@ -243,6 +243,31 @@ class PySolarmanV5:
         modbus_values = self._get_modbus_response(mb_request_frame)
         return modbus_values
 
+    def read_coils(self, register_addr, quantity):
+        """Read coils from modbus slave and return list of coil values (Modbus function code 1)"""
+        mb_request_frame = rtu.read_coils(self.mb_slave_id, register_addr, quantity)
+        modbus_values = self._get_modbus_response(mb_request_frame)
+        return modbus_values
+
+    def read_discrete_inputs(self, register_addr, quantity):
+        """Read discrete inputs from modbus slave and return list of input values (Modbus function code 2)"""
+        mb_request_frame = rtu.read_discrete_inputs(
+            self.mb_slave_id, register_addr, quantity
+        )
+        modbus_values = self._get_modbus_response(mb_request_frame)
+        return modbus_values
+    
+    def write_single_coil(self, register_addr, value):
+        """Write single coil value to modbus slave (Modbus function code 5)
+
+        Only valid values are 0xFF00 (On) and 0x0000 (Off)
+        """
+        mb_request_frame = rtu.write_single_coil(
+            self.mb_slave_id, register_addr, value
+        )
+        modbus_values = self._get_modbus_response(mb_request_frame)
+        return modbus_values
+
     def send_raw_modbus_frame(self, mb_request_frame):
         """Send raw modbus frame and return modbus response frame
 
