@@ -2,7 +2,6 @@
 """pysolarmanv5.py"""
 import struct
 import socket
-import binascii
 
 from umodbus.client.serial import rtu
 
@@ -136,13 +135,13 @@ class PySolarmanV5:
     def _send_receive_v5_frame(self, data_logging_stick_frame):
         """Send v5 frame to the data logger and receive response"""
         if self.verbose == 1:
-            print("SENT: " + str(binascii.hexlify(data_logging_stick_frame, b" ")))
+            print("SENT: " + data_logging_stick_frame.hex(" "))
 
         self.sock.sendall(data_logging_stick_frame)
         v5_response = self.sock.recv(1024)
 
         if self.verbose == 1:
-            print("RECD: " + str(binascii.hexlify(v5_response, b" ")))
+            print("RECD: " + v5_response.hex(" "))
         return v5_response
 
     def _send_receive_modbus_frame(self, mb_request_frame):
