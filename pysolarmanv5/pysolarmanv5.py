@@ -112,16 +112,12 @@ class PySolarmanV5:
             v5_frame[frame_len - 1] != int.from_bytes(self.v5_end, byteorder="big")
         ):
             raise V5FrameError("V5 frame contains invalid header or trailer values")
-
         if v5_frame[frame_len - 2] != self._calculate_v5_frame_checksum(v5_frame):
             raise V5FrameError("V5 frame contains invalid V5 checksum")
-
         if v5_frame[7:11] != self.v5_loggerserial:
             raise V5FrameError("V5 frame contains incorrect data logger serial number")
-
         if v5_frame[11] != int("02", 16):
             raise V5FrameError("V5 frame contains invalid datafield prefix")
-
         if v5_frame[24] != int("61", 16):
             raise V5FrameError("V5 frame contains invalid a Modbus RTU frame prefix")
 
@@ -183,15 +179,12 @@ class PySolarmanV5:
 
         for i, j in zip(range(num_registers), range(num_registers - 1, -1, -1)):
             response += modbus_values[i] << (j * 16)
-
         if signed:
             response = self.twos_complement(response, num_registers * 16)
-
-        response *= scale
-
+        if scale != 1:
+            response *= scale
         if bitmask is not None:
             response &= bitmask
-
         if bitshift is not None:
             response >>= bitshift
 
@@ -255,15 +248,13 @@ class PySolarmanV5:
         )
         modbus_values = self._get_modbus_response(mb_request_frame)
         return modbus_values
-    
+
     def write_single_coil(self, register_addr, value):
         """Write single coil value to modbus slave (Modbus function code 5)
 
         Only valid values are 0xFF00 (On) and 0x0000 (Off)
         """
-        mb_request_frame = rtu.write_single_coil(
-            self.mb_slave_id, register_addr, value
-        )
+        mb_request_frame = rtu.write_single_coil(self.mb_slave_id, register_addr, value)
         modbus_values = self._get_modbus_response(mb_request_frame)
         return modbus_values
 
