@@ -23,7 +23,7 @@ setuptools.setup(
         "License :: OSI Approved :: BSD License",
     ],
     packages=setuptools.find_packages(),
-    python_requires=">=3.6",
+    python_requires=">=3.8",
     install_requires=[
         "umodbus",
     ],
