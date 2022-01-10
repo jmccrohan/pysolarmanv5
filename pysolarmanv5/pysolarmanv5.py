@@ -19,7 +19,7 @@ class PySolarmanV5:
     proprietary Solarman v5 protocol and requests sent to the data logger on
     port tcp/8899.
 
-    This module aims to simplfy the Solarman v5 protocol, exposing interfaces
+    This module aims to simplify the Solarman v5 protocol, exposing interfaces
     similar to that of the uModbus library.
     """
 
