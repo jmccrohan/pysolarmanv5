@@ -100,8 +100,9 @@ class PySolarmanV5:
         2) V5 checksum is correct
         3) V5 data logger serial number is correct (in most (all?) instances the
            reply is correct, but request is incorrect)
-        4) V5 datafield contains the correct prefix (0x02 in byte 11)
-        5) Modbus RTU frame contains the correct prefix (0x61 in byte 24)
+        4) V5 control code is correct (0x1015); Logger ocassionally sends
+           spurious replies with 0x1047 control codes
+        5) V5 datafield contains the correct prefix (0x02 in byte 11)
         6) Modbus RTU frame length is at least 5 bytes (vast majority of RTU
            frames will be >=6 bytes, but valid 5 byte error/exception RTU frames
            are possible)
@@ -116,10 +117,10 @@ class PySolarmanV5:
             raise V5FrameError("V5 frame contains invalid V5 checksum")
         if v5_frame[7:11] != self.v5_loggerserial:
             raise V5FrameError("V5 frame contains incorrect data logger serial number")
+        if v5_frame[3:5] != bytes.fromhex("1015"):
+            raise V5FrameError("V5 frame contains incorrect control code")
         if v5_frame[11] != int("02", 16):
             raise V5FrameError("V5 frame contains invalid datafield prefix")
-        if v5_frame[24] != int("61", 16):
-            raise V5FrameError("V5 frame contains invalid a Modbus RTU frame prefix")
 
         modbus_frame = v5_frame[25 : frame_len - 2]
 
