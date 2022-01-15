@@ -1,5 +1,20 @@
 # Changelog
 
+## [v2.2.0] - 2022-01-15
+
+### Added
+
+- Added dependencies on Python 3.8 and uModbus
+- Implement Modbus Function Codes 01, 02 and 05
+
+### Changed
+
+- Remove binascii methods
+
+### Fixed
+
+- V5 Frame validation added in v2.1.0 corrected
+
 ## [v2.1.0] - 2022-01-04
 
 ### Changed

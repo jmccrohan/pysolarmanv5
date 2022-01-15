@@ -31,3 +31,11 @@ For the moment, run the steps below. I will publish to PyPI in due course.
 - `cd pysolarmanv5`
 - `pip install .`
 - See example code in `examples`
+
+## Contributions
+
+Contributions welcome. Please raise any Issues / Pull Requests via [Github](https://github.com/jmccrohan/pysolarmanv5).
+
+## License
+
+pysolarmanv5 is licensed under the [MIT License](https://github.com/jmccrohan/pysolarmanv5/blob/master/LICENSE). Copyright (c) 2021 Jonathan McCrohan
