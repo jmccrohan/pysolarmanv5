@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """pysolarmanv5.py"""
 import struct
 import socket
