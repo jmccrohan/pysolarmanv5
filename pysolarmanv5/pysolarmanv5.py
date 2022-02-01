@@ -223,8 +223,7 @@ class PySolarmanV5:
         mb_request_frame = rtu.write_single_register(
             self.mb_slave_id, register_addr, value
         )
-        modbus_values = self._get_modbus_response(mb_request_frame)
-        value = self._format_response(modbus_values, **kwargs)
+        value = self._get_modbus_response(mb_request_frame)
         return value
 
     def write_multiple_holding_registers(self, register_addr, values):
