@@ -40,29 +40,49 @@ class PySolarmanV5:
         self.sock = self._create_socket()
 
     def _v5_frame_def(self):
-        """Define the V5 data logger frame structure.
+        """Define the V5 data logger request frame structure.
 
-        start + length + controlcode + serial + loggerserial + datafield +
-        modbus_frame + checksum + end
+        +--+----+----+----+--------+--+----+--------+--------+--------+----------------+--+--+
+        |A5|1700|1045|0000|12345678|02|0000|00000000|00000000|00000000|0103A802000105AA|FF|15|
+        ++-+--+-+--+-+-+--+--+-----++-+-+--+-+------+-+------+-+------+----+-----------++-+-++
+        ||    |    |   |     |      |   |    |        |        |           |            |   ||
+        |v    |    |   v     |      v   |    v        |        v           v            |   v|
+        |Start|    |  Serial |    Frame |  Delivery   |       Offset    Modbus RTU      | End|
+        |     v    |         v    Type  |  Time       v       Time      Frame           |    |
+        |   Length |       Logger       v           PowerOn                             v    |
+        |          v       Serial      Sensor       Time                             Checksum|
+        |        Control               Type                                                  |
+        |        Code                                                                        |
+        +------------------------------------------------------------------------------------+
 
-        v5_loggerserial contains the data logger serial number (hex'd and reversed)
-        v5_checksum contains a dummy value of 0x00. The actual value is
-        calculated once the frame is constructed (see _calculate_v5_frame_checksum())
+        - v5_length contains the payload size (little endian unsigned short).
+          Set as a dummy value of 0x0000 below. Length calculated as part of
+          _v5_frame_encoder()
+        - payload is defined as:
+            v5_frametype + v5_sensortype + v5_deliverytime + v5_powerontime +
+            v5_offsettime + modbus_frame
+        - v5_loggerserial contains the data logger serial number (little endian
+          unsigned long)
+        - v5_checksum contains a dummy value of 0x00. The actual value is
+          calculated once the frame is constructed (see _calculate_v5_frame_checksum())
 
         For further information on the v5 frame structure, see:
+        com.igen.xiaomaizhidian APK (src/java/com/igen/*)
         https://github.com/XtheOne/Inverter-Data-Logger/issues/3#issuecomment-878911661
         https://github.com/XtheOne/Inverter-Data-Logger/blob/Experimental_Frame_Version_5_support/InverterLib.py#L48
         """
         self.v5_start = bytes.fromhex("A5")
-        self.v5_length = bytes.fromhex("1700")
+        self.v5_length = bytes.fromhex("0000")  # placeholder value
         self.v5_controlcode = bytes.fromhex("1045")
         self.v5_serial = bytes.fromhex("0000")
-        self.v5_loggerserial = struct.unpack(">I", struct.pack("<I", int(self.serial)))[
-            0
-        ].to_bytes(4, byteorder="big")
-        self.v5_datafield = bytes.fromhex("020000000000000000000000000000")
-        self.v5_checksum = bytes.fromhex("00")
-        self.v5_end = bytes.fromhex("15")  # Logger End code
+        self.v5_loggerserial = struct.pack("<I", self.serial)
+        self.v5_frametype = bytes.fromhex("02")
+        self.v5_sensortype = bytes.fromhex("0000")
+        self.v5_deliverytime = bytes.fromhex("00000000")
+        self.v5_powerontime = bytes.fromhex("00000000")
+        self.v5_offsettime = bytes.fromhex("00000000")
+        self.v5_checksum = bytes.fromhex("00")  # placeholder value
+        self.v5_end = bytes.fromhex("15")
 
     @staticmethod
     def _calculate_v5_frame_checksum(frame):
@@ -74,13 +94,20 @@ class PySolarmanV5:
 
     def _v5_frame_encoder(self, modbus_frame):
         """Take a modbus RTU frame and encode it in a V5 data logging stick frame"""
+
+        self.v5_length = struct.pack("<H", 15 + len(modbus_frame))
+
         v5_frame = bytearray(
             self.v5_start
             + self.v5_length
             + self.v5_controlcode
             + self.v5_serial
             + self.v5_loggerserial
-            + self.v5_datafield
+            + self.v5_frametype
+            + self.v5_sensortype
+            + self.v5_deliverytime
+            + self.v5_powerontime
+            + self.v5_offsettime
             + modbus_frame
             + self.v5_checksum
             + self.v5_end
@@ -91,8 +118,7 @@ class PySolarmanV5:
     def _v5_frame_decoder(self, v5_frame):
         """Decodes a V5 data logging stick frame and returns a modbus RTU frame
 
-        Modbus RTU frame will start at position 25 through len(v5_frame)-2, and
-        will be immediately preceded by 0x61 (at position 24)
+        Modbus RTU frame will start at position 25 through len(v5_frame)-2
 
         Validate the following:
         1) V5 header and trailer are correct (0xA5 and 0x15 respectively)
@@ -101,7 +127,7 @@ class PySolarmanV5:
            reply is correct, but request is incorrect)
         4) V5 control code is correct (0x1015); Logger ocassionally sends
            spurious replies with 0x1047 control codes
-        5) V5 datafield contains the correct prefix (0x02 in byte 11)
+        5) v5_frametype contains the correct value (0x02 in byte 11)
         6) Modbus RTU frame length is at least 5 bytes (vast majority of RTU
            frames will be >=6 bytes, but valid 5 byte error/exception RTU frames
            are possible)
