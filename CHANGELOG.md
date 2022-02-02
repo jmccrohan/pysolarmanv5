@@ -1,5 +1,16 @@
 # Changelog
 
+## [v2.3.0] - 2022-02-02
+
+### Changed
+
+- Improve V5 Frame documentation
+
+### Fixed
+
+- Removed erroneous shebang on pysolarmanv5.py
+- Fix traceback with write_holding_register() (See GH issue #2)
+
 ## [v2.2.0] - 2022-01-15
 
 ### Added
