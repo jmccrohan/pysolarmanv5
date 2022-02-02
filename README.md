@@ -7,13 +7,18 @@ Solarman v5 protocol and requests sent to the data logger on port tcp/8899.
 This module aims to simplify the Solarman v5 protocol, exposing interfaces
 similar to that of the uModbus library.
 
-The following Modbus RTU Function Codes are supported:
-|Modbus Function Code|Description|pysolarmanv5 Function|
-|---|---|---|
-|3|Read Holding Registers|[read_holding_registers(register_addr, quantity)](https://github.com/jmccrohan/pysolarmanv5/blob/f6f520f154c8ae3de372f94ca9246ef04556239a/pysolarmanv5/pysolarmanv5.py#L209)
-|4|Read Input Registers|[read_input_registers(register_addr, quantity)](https://github.com/jmccrohan/pysolarmanv5/blob/f6f520f154c8ae3de372f94ca9246ef04556239a/pysolarmanv5/pysolarmanv5.py#L201)
-|6|Write Single Holding Register|[write_holding_register(register_addr, value)](https://github.com/jmccrohan/pysolarmanv5/blob/f6f520f154c8ae3de372f94ca9246ef04556239a/pysolarmanv5/pysolarmanv5.py#L229)|
-|16|Write Multiple Holding Registers|[write_multiple_holding_registers(register_addr, values)](https://github.com/jmccrohan/pysolarmanv5/blob/f6f520f154c8ae3de372f94ca9246ef04556239a/pysolarmanv5/pysolarmanv5.py#L238)|
+pysolarmanv5 supports the following Modbus RTU Function Codes:
+|Modbus Function Code|Modbus Function Description|Width|Read/Write|pysolarmanv5 Function|
+|---|---|---|---|---|
+|1|Read Coils|1 bit|Read|[read_coils(register_addr, quantity)](https://github.com/jmccrohan/pysolarmanv5/blob/v2.3.0/pysolarmanv5/pysolarmanv5.py#L263)
+|2|Read Discrete Inputs|1 bit|Read|[read_discrete_inputs(register_addr, quantity)](https://github.com/jmccrohan/pysolarmanv5/blob/v2.3.0/pysolarmanv5/pysolarmanv5.py#L269)
+|3|Read Holding Registers|16 bits|Read|[read_holding_registers(register_addr, quantity)](https://github.com/jmccrohan/pysolarmanv5/blob/v2.3.0/pysolarmanv5/pysolarmanv5.py#L241)
+|4|Read Input Registers|16 bits|Read|[read_input_registers(register_addr, quantity)](https://github.com/jmccrohan/pysolarmanv5/blob/v2.3.0/pysolarmanv5/pysolarmanv5.py#L235)
+|5|Write Single Coil|1 bit|Write|[write_single_coil(register_addr, value)](https://github.com/jmccrohan/pysolarmanv5/blob/v2.3.0/pysolarmanv5/pysolarmanv5.py#L277)
+|6|Write Single Holding Register|16 bits|Write|[write_holding_register(register_addr, value)](https://github.com/jmccrohan/pysolarmanv5/blob/v2.3.0/pysolarmanv5/pysolarmanv5.py#L247)|
+|16|Write Multiple Holding Registers|16 bits|Write|[write_multiple_holding_registers(register_addr, values)](https://github.com/jmccrohan/pysolarmanv5/blob/v2.3.0/pysolarmanv5/pysolarmanv5.py#L255)|
+|N/A|Send Raw Modbus Frame|||[send_raw_modbus_frame(mb_request_frame)](https://github.com/jmccrohan/pysolarmanv5/blob/v2.3.0/pysolarmanv5/pysolarmanv5.py#L286)|
+|N/A|Send Raw Modbus Frame With Parsed Reply|||[send_raw_modbus_frame_parsed(mb_request_frame)](https://github.com/jmccrohan/pysolarmanv5/blob/v2.3.0/pysolarmanv5/pysolarmanv5.py#L293)|
 
 Details of the Solarman v5 protocol have been based on the excellent work of
 [Inverter-Data-Logger by XtheOne](https://github.com/XtheOne/Inverter-Data-Logger/)
