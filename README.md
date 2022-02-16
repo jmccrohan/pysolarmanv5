@@ -30,7 +30,11 @@ pysolarmanv5 requires Python 3.8 or greater. pysolarmanv5 depends on [uModbus](h
 
 ## Installation
 
-For the moment, run the steps below. I will publish to PyPI in due course.
+### PyPI
+
+`pip install pysolarmanv5`
+
+### Manual installation
 
 - `git clone https://github.com/jmccrohan/pysolarmanv5.git`
 - `cd pysolarmanv5`
