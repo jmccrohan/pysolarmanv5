@@ -20,6 +20,68 @@ class PySolarmanV5:
 
     This module aims to simplify the Solarman v5 protocol, exposing interfaces
     similar to that of the uModbus library.
+
+
+    #### v5 frame information ####
+
+    The v5 frame structure differs slightly between request and response
+    frames (in the Payload).
+
+    For the purposes of this implementation, the V5 frame is composed of three
+    parts:
+    - Header
+    - Payload (incorporating Modbus RTU Frame)
+    - Trailer
+
+    The Header is always 11 bytes (Little Endian) and composed of:
+    - v5_start
+        two bytes denoting the start of the V5 frame (0xA5)
+    - v5_length
+        four bytes indicating the length of the Payload
+    - v5_controlcode
+        four bytes indicating the control code
+    - Serial; four bytes indicating the serial (of what?). pysolarmanv5 sets
+      this to 0x0000 on outgoing requests. Responses appear to increment this
+      field
+    - Serial Number; eight bytes indicating the serial number of Solarman data
+      logging stick
+
+    The Payload is variable length depending on the size of the Modbus RTU
+    frame. The format of the Payload varies between request and response
+    frames, however most of the elements are common to both. All Payload
+    elements are encoded Little Endian, except for the Modbus RTU frame which
+    is encoded Big Endian.
+
+    A request frame contains the following Payload elements:
+    - One byte indicating the frame type. (0x02 = inverter, 0x01 = data logging
+      stick, 0x00 = keep alive?)
+    - Two bytes indicating sensor type. pysolarmanv5 sets this to 0x0000 on
+      outgoing requests
+    - Four bytes indicating the delivery time (Other implmentations have this
+      field named TimeOutOfFactory)
+    - Four bytes indicating the power on time (Other implmentations have this
+      field named TimeNowOnPower)
+    - Four bytes indicating the offset time (Other implmentations have this
+      field named TimeOffset)
+    - Variable number of bytes corresponding to the Modbus RTU request frame.
+      Most Modbus requests (for function codes 03 and 04 anyway) are 9 bytes.
+
+    A response frame contains the following elements:
+    - One byte indicating the frame type. (0x02 = inverter, 0x01 = data logging
+      stick, 0x00 = keep alive?)
+    - One byte indicating status (0x01 = success?)
+    - Four bytes indicating the delivery time (Other implmentations have this
+      field named TimeOutOfFactory)
+    - Four bytes indicating the power on time (Other implmentations have this
+      field named TimeNowOnPower)
+    - Four bytes indicating the offset time (Other implmentations have this
+      field named TimeOffset)
+    - Variable number of bytes corresponding to the Modbus RTU response frame.
+
+    The Payload is defined as the variable length element of v5 frame after
+    the 11 byte header (Start, Length, Control Code, Serial and Logger Serial),
+    up to but not including the Trailer (Checksum and End) bytes.
+
     """
 
     def __init__(self, address, serial, **kwargs):
@@ -99,21 +161,27 @@ class PySolarmanV5:
 
         self.v5_length = struct.pack("<H", 15 + len(modbus_frame))
 
-        v5_frame = bytearray(
+        v5_header = bytearray(
             self.v5_start
             + self.v5_length
             + self.v5_controlcode
             + self.v5_serial
             + self.v5_loggerserial
-            + self.v5_frametype
+        )
+
+        v5_payload = bytearray(
+            self.v5_frametype
             + self.v5_sensortype
             + self.v5_deliverytime
             + self.v5_powerontime
             + self.v5_offsettime
             + modbus_frame
-            + self.v5_checksum
-            + self.v5_end
         )
+
+        v5_trailer = bytearray(self.v5_checksum + self.v5_end)
+
+        v5_frame = v5_header + v5_payload + v5_trailer
+
         v5_frame[len(v5_frame) - 2] = self._calculate_v5_frame_checksum(v5_frame)
         return v5_frame
 
