@@ -35,6 +35,7 @@ class PySolarmanV5:
         self.mb_slave_id = kwargs.get("mb_slave_id", 1)
         self.verbose = kwargs.get("verbose", 0)
         self.socket_timeout = kwargs.get("socket_timeout", 60)
+        self.v5_error_correction = kwargs.get("error_correction", 0)
 
         self._v5_frame_def()
         self.sock = self._create_socket()
@@ -57,7 +58,8 @@ class PySolarmanV5:
 
         - v5_length contains the payload size (little endian unsigned short).
           Set as a dummy value of 0x0000 below. Length calculated as part of
-          _v5_frame_encoder()
+          _v5_frame_encoder(). For outgoing requests, the payload size is
+          calculated as (1+2+4+4+4+len(modbus_frame))
         - payload is defined as:
             v5_frametype + v5_sensortype + v5_deliverytime + v5_powerontime +
             v5_offsettime + modbus_frame
@@ -118,26 +120,39 @@ class PySolarmanV5:
     def _v5_frame_decoder(self, v5_frame):
         """Decodes a V5 data logging stick frame and returns a modbus RTU frame
 
-        Modbus RTU frame will start at position 25 through len(v5_frame)-2
+        Modbus RTU frame will start at position 25 through len(v5_frame)-2.
+
+        Occasionally logger can send a spurious 'keep-alive' reply with a
+        control code of 0x1047. These messages can either take the place of,
+        or be appended to valid 0x1015 responses. In this case, the v5_frame
+        will contain an invalid checksum.
 
         Validate the following:
-        1) V5 header and trailer are correct (0xA5 and 0x15 respectively)
+        1) V5 start and end are correct (0xA5 and 0x15 respectively)
         2) V5 checksum is correct
         3) V5 data logger serial number is correct (in most (all?) instances the
            reply is correct, but request is incorrect)
-        4) V5 control code is correct (0x1015); Logger ocassionally sends
-           spurious replies with 0x1047 control codes
+        4) V5 control code is correct (0x1015)
         5) v5_frametype contains the correct value (0x02 in byte 11)
         6) Modbus RTU frame length is at least 5 bytes (vast majority of RTU
            frames will be >=6 bytes, but valid 5 byte error/exception RTU frames
            are possible)
         """
         frame_len = len(v5_frame)
+        (payload_len,) = struct.unpack("<H", v5_frame[1:3])
+
+        frame_len_without_payload_len = 13
+
+        if frame_len != (frame_len_without_payload_len + payload_len):
+            if self.verbose:
+                print("frame_len does not match payload_len.")
+            if self.error_correction:
+                frame_len = frame_len_without_payload_len + payload_len
 
         if (v5_frame[0] != int.from_bytes(self.v5_start, byteorder="big")) or (
             v5_frame[frame_len - 1] != int.from_bytes(self.v5_end, byteorder="big")
         ):
-            raise V5FrameError("V5 frame contains invalid header or trailer values")
+            raise V5FrameError("V5 frame contains invalid start or end values")
         if v5_frame[frame_len - 2] != self._calculate_v5_frame_checksum(v5_frame):
             raise V5FrameError("V5 frame contains invalid V5 checksum")
         if v5_frame[7:11] != self.v5_loggerserial:
@@ -145,7 +160,7 @@ class PySolarmanV5:
         if v5_frame[3:5] != bytes.fromhex("1015"):
             raise V5FrameError("V5 frame contains incorrect control code")
         if v5_frame[11] != int("02", 16):
-            raise V5FrameError("V5 frame contains invalid datafield prefix")
+            raise V5FrameError("V5 frame contains invalid frametype")
 
         modbus_frame = v5_frame[25 : frame_len - 2]
 
