@@ -137,7 +137,7 @@ class PySolarmanV5:
         """
         self.v5_start = bytes.fromhex("A5")
         self.v5_length = bytes.fromhex("0000")  # placeholder value
-        self.v5_controlcode = bytes.fromhex("1045")
+        self.v5_controlcode = struct.pack("<H",0x4510)
         self.v5_serial = bytes.fromhex("0000")
         self.v5_loggerserial = struct.pack("<I", self.serial)
         self.v5_frametype = bytes.fromhex("02")
@@ -191,8 +191,8 @@ class PySolarmanV5:
         Modbus RTU frame will start at position 25 through len(v5_frame)-2.
 
         Occasionally logger can send a spurious 'keep-alive' reply with a
-        control code of 0x1047. These messages can either take the place of,
-        or be appended to valid 0x1015 responses. In this case, the v5_frame
+        control code of 0x4710. These messages can either take the place of,
+        or be appended to valid 0x1510 responses. In this case, the v5_frame
         will contain an invalid checksum.
 
         Validate the following:
@@ -200,7 +200,7 @@ class PySolarmanV5:
         2) V5 checksum is correct
         3) V5 data logger serial number is correct (in most (all?) instances the
            reply is correct, but request is incorrect)
-        4) V5 control code is correct (0x1015)
+        4) V5 control code is correct (0x1510)
         5) v5_frametype contains the correct value (0x02 in byte 11)
         6) Modbus RTU frame length is at least 5 bytes (vast majority of RTU
            frames will be >=6 bytes, but valid 5 byte error/exception RTU frames
@@ -225,7 +225,7 @@ class PySolarmanV5:
             raise V5FrameError("V5 frame contains invalid V5 checksum")
         if v5_frame[7:11] != self.v5_loggerserial:
             raise V5FrameError("V5 frame contains incorrect data logger serial number")
-        if v5_frame[3:5] != bytes.fromhex("1015"):
+        if v5_frame[3:5] != struct.pack("<H",0x1510):
             raise V5FrameError("V5 frame contains incorrect control code")
         if v5_frame[11] != int("02", 16):
             raise V5FrameError("V5 frame contains invalid frametype")
