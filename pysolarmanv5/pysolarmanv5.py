@@ -214,7 +214,7 @@ class PySolarmanV5:
         if frame_len != (frame_len_without_payload_len + payload_len):
             if self.verbose:
                 print("frame_len does not match payload_len.")
-            if self.error_correction:
+            if self.v5_error_correction:
                 frame_len = frame_len_without_payload_len + payload_len
 
         if (v5_frame[0] != int.from_bytes(self.v5_start, byteorder="big")) or (
