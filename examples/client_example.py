@@ -1,5 +1,5 @@
 """ A basic client demonstrating how to use pysolarmanv5."""
-from pysolarmanv5.pysolarmanv5 import PySolarmanV5
+from pysolarmanv5 import PySolarmanV5
 
 
 def main():
