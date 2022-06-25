@@ -24,6 +24,10 @@ Details of the Solarman v5 protocol have been based on the excellent work of
 [Inverter-Data-Logger by XtheOne](https://github.com/XtheOne/Inverter-Data-Logger/)
 and others.
 
+## Supported Devices
+
+A user contributed list of supported devices is available [here](https://github.com/jmccrohan/pysolarmanv5/issues/11).
+
 ## Dependencies
 
 pysolarmanv5 requires Python 3.8 or greater. pysolarmanv5 depends on [uModbus](https://github.com/AdvancedClimateSystems/uModbus).
