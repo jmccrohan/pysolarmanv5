@@ -10,7 +10,7 @@ def main():
     respectively.
     """
     modbus = PySolarmanV5(
-        "192.168.1.24", 123456789, port=8899, mb_slave_id=1, verbose=1
+        "192.168.1.24", 123456789, port=8899, mb_slave_id=1, verbose=False
     )
 
     """Query six input registers, results as a list"""

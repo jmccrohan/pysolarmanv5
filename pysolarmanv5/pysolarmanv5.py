@@ -28,13 +28,13 @@ class PySolarmanV5:
     :type port: int, optional
     :param mb_slave_id: Inverter Modbus slave ID, defaults to 1
     :type mb_slave_id: int, optional
-    :param verbose: Enable verbose logging, defaults to 0
-    :type verbose: int, optional
+    :param verbose: Enable verbose logging, defaults to False
+    :type verbose: bool, optional
     :param socket_timeout: Socket timeout duration in seconds, defaults to 60
     :type socket_timeout: int, optional
     :param v5_error_correction: Enable naive error correction for V5 frames,
-        defaults to 0
-    :type v5_error_correction: int, optional
+        defaults to False
+    :type v5_error_correction: bool, optional
 
     Basic example:
        >>> from pysolarmanv5 import PySolarmanV5
@@ -53,9 +53,9 @@ class PySolarmanV5:
 
         self.port = kwargs.get("port", 8899)
         self.mb_slave_id = kwargs.get("mb_slave_id", 1)
-        self.verbose = kwargs.get("verbose", 0)
+        self.verbose = kwargs.get("verbose", False)
         self.socket_timeout = kwargs.get("socket_timeout", 60)
-        self.v5_error_correction = kwargs.get("error_correction", 0)
+        self.v5_error_correction = kwargs.get("error_correction", False)
 
         self._v5_frame_def()
         self.sock = self._create_socket()
@@ -195,13 +195,13 @@ class PySolarmanV5:
         :rtype: bytes
 
         """
-        if self.verbose == 1:
+        if self.verbose:
             print("SENT: " + data_logging_stick_frame.hex(" "))
 
         self.sock.sendall(data_logging_stick_frame)
         v5_response = self.sock.recv(1024)
 
-        if self.verbose == 1:
+        if self.verbose:
             print("RECD: " + v5_response.hex(" "))
         return v5_response
 
@@ -265,7 +265,7 @@ class PySolarmanV5:
         :param scale: Scaling factor
         :type scale: int
         :param signed: Signed value (2s complement)
-        :type signed: int
+        :type signed: bool
         :param bitmask: Bitmask value
         :type bitmask: int
         :param bitshift: Bitshift value
@@ -275,7 +275,7 @@ class PySolarmanV5:
 
         """
         scale = kwargs.get("scale", 1)
-        signed = kwargs.get("signed", 0)
+        signed = kwargs.get("signed", False)
         bitmask = kwargs.get("bitmask", None)
         bitshift = kwargs.get("bitshift", None)
         response = 0
