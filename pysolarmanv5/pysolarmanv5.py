@@ -457,6 +457,23 @@ class PySolarmanV5:
         modbus_values = self._get_modbus_response(mb_request_frame)
         return modbus_values
 
+    def write_multiple_coils(self, register_addr, values):
+        """Write multiple coil values to modbus slave (Modbus function code 15)
+
+        :param register_addr: Modbus register start address
+        :type register_addr: int
+        :param values: values to write; ``1`` (On) or ``0`` (Off)
+        :type values: list[int]
+        :return: values written
+        :rtype: list[int]
+
+        """
+        mb_request_frame = rtu.write_multuple_coils(
+            self.mb_slave_id, register_addr, values
+        )
+        modbus_values = self._get_modbus_response(mb_request_frame)
+        return modbus_values
+
     def send_raw_modbus_frame(self, mb_request_frame):
         """Send raw modbus frame and return modbus response frame
 
