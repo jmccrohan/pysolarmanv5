@@ -15,7 +15,7 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     license="BSD",
-    keywords="solarman igen-tech modbus solar inverter",
+    keywords="solarman igen-tech modbus solar inverter solarmanv5",
     url="https://github.com/jmccrohan/pysolarmanv5",
     classifiers=[
         "Programming Language :: Python :: 3",
