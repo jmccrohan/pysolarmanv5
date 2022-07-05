@@ -376,7 +376,7 @@ class PySolarmanV5:
         value = self._format_response(modbus_values, **kwargs)
         return value
 
-    def write_holding_register(self, register_addr, value, **kwargs):
+    def write_holding_register(self, register_addr, value):
         """Write a single holding register to modbus slave (Modbus function code 6)
 
         :param register_addr: Modbus register address
