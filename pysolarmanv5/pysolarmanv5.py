@@ -474,6 +474,44 @@ class PySolarmanV5:
         modbus_values = self._get_modbus_response(mb_request_frame)
         return modbus_values
 
+    def masked_write_holding_register(self, register_addr, **kwargs):
+        """Mask write a single holding register to modbus slave (Modbus function code 22)
+
+        Used to set or clear individual bits within a holding register
+
+        If default values are provided for both ``or_mask`` and ``and_mask``,
+        the write element of this function is a NOP.
+
+        .. warning::
+           This is not implemented as a native Modbus function. It is a software
+           implementation using a combination of :func:`read_holding_registers() <pysolarmanv5.PySolarmanV5.read_holding_registers>`
+           and :func:`write_holding_register() <pysolarmanv5.PySolarmanV5.write_holding_register>`.
+
+           It is therefore **not atomic**.
+
+        :param register_addr: Modbus register address
+        :type register_addr: int
+        :param or_mask: OR mask (set bits), defaults to ``0x0000`` (no change)
+        :type or_mask: int
+        :param and_mask: AND mask (clear bits), defaults to ``0xFFFF`` (no change)
+        :type and_mask: int
+        :return: value written
+        :rtype: int
+
+        """
+        or_mask = kwargs.get("or_mask", 0x0000)
+        and_mask = kwargs.get("and_mask", 0xFFFF)
+
+        current_value = self.read_holding_registers(register_addr, 1)[0]
+
+        if (or_mask != 0x0000) or (and_mask != 0xFFFF):
+            masked_value = current_value
+            masked_value |= or_mask
+            masked_value &= and_mask
+            updated_value = self.write_holding_register(register_addr, masked_value)
+            return updated_value
+        return current_value
+
     def send_raw_modbus_frame(self, mb_request_frame):
         """Send raw modbus frame and return modbus response frame
 
