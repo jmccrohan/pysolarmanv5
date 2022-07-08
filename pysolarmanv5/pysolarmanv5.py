@@ -1,6 +1,7 @@
 """pysolarmanv5.py"""
 import struct
 import socket
+import logging
 
 from umodbus.client.serial import rtu
 
@@ -28,13 +29,23 @@ class PySolarmanV5:
     :type port: int, optional
     :param mb_slave_id: Inverter Modbus slave ID, defaults to 1
     :type mb_slave_id: int, optional
-    :param verbose: Enable verbose logging, defaults to False
-    :type verbose: bool, optional
     :param socket_timeout: Socket timeout duration in seconds, defaults to 60
     :type socket_timeout: int, optional
     :param v5_error_correction: Enable naive error correction for V5 frames,
         defaults to False
     :type v5_error_correction: bool, optional
+
+    .. versionadded:: v2.4.0
+
+    :param logger: Python logging facility
+    :type logger: Logger, optional
+
+    .. deprecated:: v2.4.0
+
+    :param verbose: Enable verbose logging, defaults to False. Use **logger**
+        instead. For compatibility purposes, **verbose**, if enabled, will
+        create a logger, and set the logging level to DEBUG.
+    :type verbose: bool, optional
 
     Basic example:
        >>> from pysolarmanv5 import PySolarmanV5
@@ -48,6 +59,11 @@ class PySolarmanV5:
     def __init__(self, address, serial, **kwargs):
         """Constructor"""
 
+        self.log = kwargs.get("logger", None)
+        if self.log is None:
+            logging.basicConfig()
+            self.log = logging.getLogger(__name__)
+
         self.address = address
         self.serial = serial
 
@@ -56,6 +72,9 @@ class PySolarmanV5:
         self.verbose = kwargs.get("verbose", False)
         self.socket_timeout = kwargs.get("socket_timeout", 60)
         self.v5_error_correction = kwargs.get("error_correction", False)
+
+        if self.verbose:
+            self.log.setLevel("DEBUG")
 
         self._v5_frame_def()
         self.sock = self._create_socket()
@@ -161,8 +180,7 @@ class PySolarmanV5:
         frame_len_without_payload_len = 13
 
         if frame_len != (frame_len_without_payload_len + payload_len):
-            if self.verbose:
-                print("frame_len does not match payload_len.")
+            self.log.debug("frame_len does not match payload_len.")
             if self.v5_error_correction:
                 frame_len = frame_len_without_payload_len + payload_len
 
@@ -195,14 +213,12 @@ class PySolarmanV5:
         :rtype: bytes
 
         """
-        if self.verbose:
-            print("SENT: " + data_logging_stick_frame.hex(" "))
+        self.log.debug("SENT: " + data_logging_stick_frame.hex(" "))
 
         self.sock.sendall(data_logging_stick_frame)
         v5_response = self.sock.recv(1024)
 
-        if self.verbose:
-            print("RECD: " + v5_response.hex(" "))
+        self.log.debug("RECD: " + v5_response.hex(" "))
         return v5_response
 
     def _send_receive_modbus_frame(self, mb_request_frame):
