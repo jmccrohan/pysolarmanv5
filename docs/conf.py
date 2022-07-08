@@ -31,6 +31,7 @@ autodoc_default_options = {
     #'private-members': True,
     }
 
+autodoc_mock_imports = ["umodbus"]
 
 packetdiag_html_image_format = 'SVG'
 
