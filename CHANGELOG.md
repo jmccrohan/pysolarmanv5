@@ -1,5 +1,31 @@
 # Changelog
 
+## [v2.4.0] - UNRELEASED
+
+### Added
+
+- Add [Sphinx/ReadTheDocs documentation](https://pysolarmanv5.readthedocs.io/)
+- Add link to user-contributed list of supported data loggers/devices
+  [See GH issue #11](https://github.com/jmccrohan/pysolarmanv5/issues/11)
+- Add solarman_scan utility
+- Add error_correction mode
+- Implement Modbus Function Codes 15 and 22:
+  write_multiple_coils()
+  masked_write_holding_register()
+
+### Changed
+
+- Tidy up pysolarmanv5 namespace;
+  Move PySolarmanV5 class from pysolarmanv5.pysolarmanv5 to pysolarmanv5
+- Changed constructor parameters from int to bool where appropriate;
+  Maintains backwards compatibility
+- Properly implement Logging. Old verbose parameter marked as deprecated
+
+### Fixed
+
+- Fix LICENSE typo in setup.py
+- Remove erroneous kwargs from write_holding_register()
+
 ## [v2.3.0] - 2022-02-02
 
 ### Changed
