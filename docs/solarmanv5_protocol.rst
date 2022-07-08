@@ -1,0 +1,194 @@
+Solarman V5 Protocol
+====================
+
+**Solarman V5** is a proprietary protocol used by Solarman (IGEN-Tech) solar
+inverter data loggers. Solarman V5 is TCP-based, and is used by the data loggers
+for communicating both locally and with Solarman Cloud. Solarman data loggers
+use Hi-Flying HF-A11 SOCs which by default use port tcp/8899.
+
+By sending a suitably formed packet to the data logging stick on this port, one
+can send and receive Modbus RTU frames directly to/from the inverter on port
+tcp/8899 without interfering with Solarman Cloud operations.
+
+.. note::
+   This information has been gathered from various internet sources and from
+   reverse engineered packet captures. No warranty/liability of any kind is
+   provided.
+
+For the purposes of this implementation, the Solarman V5 frame is composed of
+three parts:
+
+* :ref:`Header`
+* :ref:`Payload` (incorporating Modbus RTU Frame)
+* :ref:`Trailer`
+
+All Solarman V5 fields are encoded Little Endian, with the exception of the Modbus
+RTU frame, which is encoded Big Endian (as per Modbus spec).
+
+Header
+^^^^^^
+
+The Header is always 11 bytes and is composed of:
+
+* **Start** (*one byte*) – Denotes the start of the V5 frame. Always ``0xA5``.
+* **Length** (*two bytes*) – :ref:`Payload` length
+* **Control Code** (*two bytes*) – Describes the type of V5 frame.
+  For Modbus RTU requests, the control code is ``0x4510``.
+  For Modbus RTU responses, the control code is ``0x1510``.
+* **Serial** (*two bytes*) – Appears to be a sequence number. pysolarmanv5 sets
+  this field to ``0x0000`` on outgoing requests.
+  The data logging stick increments this field for each reply sent (either to
+  Solarman Cloud or local requests).
+* **Logger Serial** (*four bytes*) – Serial number of Solarman data logging
+  stick
+
+Payload
+^^^^^^^
+The Payload fields vary slightly between request and response frames. The size
+of the Payload will also vary depending on the size of the embedded Modbus RTU
+frame.
+
+Request Payload
+"""""""""""""""
+
+A request payload is 15 bytes + the length of the Modbus RTU request frame, and
+is composed of:
+
+* **Frame Type** (*one byte*) – Denotes the frame type. pysolarmanv5 sets this
+  to ``0x02`` on outgoing Modbus RTU requests, where ``0x02`` is understood to
+  mean the solar inverter.
+* **Sensor Type** (*two bytes*) – Denotes the sensor type. pysolarmanv5 sets
+  this to ``0x0000`` on outgoing requests.
+* **Delivery Time** (*four bytes*) – Denotes the frame delivery time. See
+  corresponding response field of same name for further details. pysolarmanv5
+  sets this to ``0x00000000`` on outgoing requests.
+* **Power On Time** (*four bytes*) – Denotes the frame power on time. See
+  corresponding response field of same name for further details. pysolarmanv5
+  sets this to ``0x00000000`` on outgoing requests.
+* **Offset Time** (*four bytes*) – Denotes the frame offset time. See
+  corresponding response field of same name for further details. pysolarmanv5
+  sets this to ``0x00000000`` on outgoing requests.
+* **Modbus RTU Frame** (*variable length*) – Modbus RTU request frame.
+
+Response Payload
+""""""""""""""""
+A response payload is 14 bytes + the length of the Modbus RTU response frame,
+and is composed of:
+
+* **Frame Type** (*one byte*) – Denotes the frame type, where:
+
+  * ``0x02``: Solar Inverter
+  * ``0x01``: Data Logging Stick
+  * ``0x00``: Solarman Cloud (*or keep alive?*)
+* **Status** (*one byte*) – Denotes the request status. ``0x01`` appears to
+  denote success.
+* **Delivery Time** (*four bytes*) – Denotes the time since data logging stick
+  was booted for the very first time, in seconds. Other implementations have
+  this field named *TimeOutOfFactory*.
+* **Power On Time** (*four bytes*) – Denotes the current uptime of the data
+  logging stick in seconds.
+* **Offset Time** (*four bytes*) – Denotes the current boot time of the data
+  logging stick in seconds since the Unix epoch.
+* **Modbus RTU Frame** (*variable length*) – Modbus RTU response frame.
+
+Response Timestamp Fields
+"""""""""""""""""""""""""
+The following statements in relation to the timestamp fields are true:
+
+* **Delivery Time** - **Power On Time** = Device Total Operation Time (as shown
+  in Solarman Cloud).
+* **Delivery Time** + **Offset Time** = V5 frame timestamp, in seconds since the
+  Unix epoch.
+
+Trailer
+^^^^^^^
+The Trailer is always 2 bytes and is composed of:
+
+* **Checksum** (*one byte*) – Denotes the V5 frame checksum. The checksum is
+  computed on the entire V5 frame except for Start, Checksum (obviously!) and
+  End.
+  
+  Note, that this field is completely separate to the Modbus RTU checksum, which
+  coincidentally, is the two bytes immediately preceding this field.
+* **End** (*one byte*) – Denotes the end of the V5 frame. Always ``0x15``.
+
+
+
+Frame Diagrams
+^^^^^^^^^^^^^^
+
+Frame diagrams for request and response frames are shown below. Any values shown
+below are in Network Byte Order.
+
+.. todo::
+   Figure out how to invert the colours of the SVG packet diagrams upon toggling
+   furo's light/dark themes using custom CSS/JS.
+
+   The current hack of using grey as a universal colour is less than ideal.
+
+Request Frame Format
+""""""""""""""""""""
+
+.. packetdiag::
+
+    packetdiag {
+      colwidth = 32
+      scale_interval = 8
+      node_height = 32
+      default_node_color = none
+      default_linecolor = grey
+      default_textcolor = grey
+      default_fontsize = 10
+
+      0-7: Start (0xA5)\n(1 byte)
+      8-23: Length\n(2 bytes)
+      24-39: Control Code (0x1045)\n(2 bytes)
+      40-55: Serial (0x0000)\n(2 bytes)
+      56-87: Logger Serial\n(4 bytes)
+      88-95: Frame Type (0x2)\n(1 byte)
+      96-111: Sensor Type (0x0000)\n(2 bytes)
+      112-143: Delivery Time (0x00000000)\n(4 bytes)
+      144-175: Power On Time (0x00000000)\n(4 bytes)
+      176-207: Offset Time (0x00000000)\n(4 bytes)
+      208-271: Modbus RTU Frame\n(variable bytes)
+      272-279: Checksum\n(1 byte)
+      280-287: End (0x15)\n(1 byte)
+   }
+
+Response Frame Format
+"""""""""""""""""""""
+
+.. packetdiag::
+
+    packetdiag {
+      colwidth = 32
+      scale_interval = 8
+      node_height = 32
+      default_node_color = none
+      default_linecolor = grey
+      default_textcolor = grey
+      default_fontsize = 10
+
+      0-7: Start (0xA5)\n(1 byte)
+      8-23: Length\n(2 bytes)
+      24-39: Control Code (0x1015)\n(2 bytes)
+      40-55: Serial (0x0000)\n(2 bytes)
+      56-87: Logger Serial\n(4 bytes)
+      88-95: Frame Type (0x02)\n(1 byte)
+      96-103: Status (0x01)\n(1 byte)
+      104-135: Delivery Time\n(4 bytes)
+      136-167: Power On Time\n(4 bytes)
+      168-199: Offset Time\n(4 bytes)
+      200-255: Modbus RTU Frame\n(variable bytes)
+      256-263: Checksum\n(1 byte)
+      264-271: End (0x15)\n(1 byte)
+   }
+
+
+Further reading
+^^^^^^^^^^^^^^^
+For further information on the Solarman V5 Protocol, see the following:
+
+* ``com.igen.xiaomaizhidian`` APK (see ``src/java/com/igen/*``)
+* https://github.com/XtheOne/Inverter-Data-Logger/issues/3#issuecomment-878911661
+* https://github.com/XtheOne/Inverter-Data-Logger/blob/Experimental_Frame_Version_5_support/InverterLib.py#L48
