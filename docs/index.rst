@@ -17,7 +17,7 @@ pysolarmanv5
    changelog
    GitHub <https://github.com/jmccrohan/pysolarmanv5>
    PyPI <https://pypi.org/project/pysolarmanv5>
-   Read the Docs <https://pysolarmanv5.readthedocs.io/en/index.html>
+   Read the Docs <https://pysolarmanv5.readthedocs.io/>
 
 **pysolarmanv5** is a Python module to interact with Solarman (IGEN-Tech) v5
 based solar inverter data loggers. Modbus RTU frames can be encapsulated in the
