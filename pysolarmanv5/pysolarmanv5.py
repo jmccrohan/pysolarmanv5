@@ -80,10 +80,10 @@ class PySolarmanV5:
         self.sock = self._create_socket()
 
     def _v5_frame_def(self):
-        """Define and contruct V5 request frame structure."""
+        """Define and construct V5 request frame structure."""
         self.v5_start = bytes.fromhex("A5")
         self.v5_length = bytes.fromhex("0000")  # placeholder value
-        self.v5_controlcode = struct.pack("<H",0x4510)
+        self.v5_controlcode = struct.pack("<H", 0x4510)
         self.v5_serial = bytes.fromhex("0000")
         self.v5_loggerserial = struct.pack("<I", self.serial)
         self.v5_frametype = bytes.fromhex("02")
@@ -99,7 +99,7 @@ class PySolarmanV5:
         """Calculate checksum on all frame bytes except head, end and checksum
 
         :param frame: V5 frame
-        :type frame: bytearray
+        :type frame: bytes
         :return: Checksum value of V5 frame
         :rtype: int
 
@@ -168,7 +168,7 @@ class PySolarmanV5:
            are possible)
 
         :param v5_frame: V5 frame
-        :type frame: bytes
+        :type v5_frame: bytes
         :return: Modbus RTU Frame
         :rtype: bytes
         :raises V5FrameError: If parsing fails due to invalid V5 frame
@@ -192,7 +192,7 @@ class PySolarmanV5:
             raise V5FrameError("V5 frame contains invalid V5 checksum")
         if v5_frame[7:11] != self.v5_loggerserial:
             raise V5FrameError("V5 frame contains incorrect data logger serial number")
-        if v5_frame[3:5] != struct.pack("<H",0x1510):
+        if v5_frame[3:5] != struct.pack("<H", 0x1510):
             raise V5FrameError("V5 frame contains incorrect control code")
         if v5_frame[11] != int("02", 16):
             raise V5FrameError("V5 frame contains invalid frametype")
@@ -208,7 +208,7 @@ class PySolarmanV5:
         """Send v5 frame to the data logger and receive response
 
         :param data_logging_stick_frame: V5 frame to transmit
-        :type frame: bytes
+        :type data_logging_stick_frame: bytes
         :return: V5 frame received
         :rtype: bytes
 
@@ -225,7 +225,7 @@ class PySolarmanV5:
         """Encodes mb_frame, sends/receives v5_frame, decodes response
 
         :param mb_request_frame: Modbus RTU frame to transmit
-        :type frame: bytes
+        :type mb_request_frame: bytes
         :return: Modbus RTU frame received
         :rtype: bytes
 
@@ -239,7 +239,7 @@ class PySolarmanV5:
         """Returns mb response values for a given mb_request_frame
 
         :param mb_request_frame: Modbus RTU frame to parse
-        :type frame: bytes
+        :type mb_request_frame: bytes
         :return: Modbus RTU decoded values
         :rtype: list[int]
 
@@ -259,8 +259,8 @@ class PySolarmanV5:
 
         :param val: Value to calculate
         :type val: int
-        :param bits: Number of bits
-        :type bits: int
+        :param num_bits: Number of bits
+        :type num_bits: int
 
         :return: 2s Complement value
         :rtype: int
@@ -484,7 +484,7 @@ class PySolarmanV5:
         :rtype: list[int]
 
         """
-        mb_request_frame = rtu.write_multuple_coils(
+        mb_request_frame = rtu.write_multiple_coils(
             self.mb_slave_id, register_addr, values
         )
         modbus_values = self._get_modbus_response(mb_request_frame)
@@ -533,8 +533,8 @@ class PySolarmanV5:
 
         Wrapper around internal method :func:`_send_receive_modbus_frame() <pysolarmanv5.PySolarmanV5._send_receive_modbus_frame>`
 
-        :param frame: Modbus frame
-        :type frame: bytearray
+        :param mb_request_frame: Modbus frame
+        :type mb_request_frame: bytearray
         :return: Modbus frame
         :rtype: bytearray
 
@@ -546,8 +546,8 @@ class PySolarmanV5:
 
         Wrapper around internal method :func:`_get_modbus_response() <pysolarmanv5.PySolarmanV5._get_modbus_response>`
 
-        :param frame: Modbus frame
-        :type frame: bytearray
+        :param mb_request_frame: Modbus frame
+        :type mb_request_frame: bytearray
         :return: Modbus RTU decoded values
         :rtype: list[int]
         """

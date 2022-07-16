@@ -2,6 +2,7 @@
 
 import socket
 
+
 def main():
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -10,7 +11,7 @@ def main():
 
     request = "WIFIKIT-214028-READ"
     address = ("<broadcast>", 48899)
-    
+
     sock.sendto(request.encode(), address)
     while True:
         try:
@@ -21,6 +22,7 @@ def main():
         values = data.decode().split(",")
         result = dict(zip(keys, values))
         print(result)
+
 
 if __name__ == "__main__":
     main()
