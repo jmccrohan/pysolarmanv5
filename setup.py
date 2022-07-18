@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="pysolarmanv5",
-    version="2.3.0",
+    version="2.4.0",
     author="Jonathan McCrohan",
     author_email="jmccrohan@gmail.com",
     description=(
