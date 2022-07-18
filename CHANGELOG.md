@@ -12,6 +12,7 @@
 - Implement Modbus Function Codes 15 and 22:
   write_multiple_coils()
   masked_write_holding_register()
+- Add optional Socket parameter
 
 ### Changed
 

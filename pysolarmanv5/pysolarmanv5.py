@@ -12,6 +12,12 @@ class V5FrameError(Exception):
     pass
 
 
+class NoSocketAvailableError(Exception):
+    """No Socket Available Error"""
+
+    pass
+
+
 class PySolarmanV5:
     """
     The PySolarmanV5 class establishes a TCP connection to a Solarman V5 data
@@ -39,6 +45,11 @@ class PySolarmanV5:
 
     :param logger: Python logging facility
     :type logger: Logger, optional
+    :param socket: TCP Socket connection to data logging stick. If **socket**
+        argument is provided, **address** argument is unused (however, it is
+        still required as a positional argument)
+    :type socket: Socket, optional
+    :raises NoSocketAvailableError: If no network socket is available
 
     .. deprecated:: v2.4.0
 
@@ -77,7 +88,10 @@ class PySolarmanV5:
             self.log.setLevel("DEBUG")
 
         self._v5_frame_def()
-        self.sock = self._create_socket()
+
+        self.sock = kwargs.get("socket", self._create_socket())
+        if self.sock is None:
+            raise NoSocketAvailableError("No socket available")
 
     def _v5_frame_def(self):
         """Define and construct V5 request frame structure."""
@@ -250,7 +264,12 @@ class PySolarmanV5:
 
     def _create_socket(self):
         """Creates and returns a socket"""
-        sock = socket.create_connection((self.address, self.port), self.socket_timeout)
+        try:
+            sock = socket.create_connection(
+                (self.address, self.port), self.socket_timeout
+            )
+        except OSError:
+            return None
         return sock
 
     @staticmethod

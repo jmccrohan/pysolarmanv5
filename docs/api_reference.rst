@@ -11,3 +11,5 @@ Exceptions
 ^^^^^^^^^^
 
 .. autoexception:: pysolarmanv5.V5FrameError
+
+.. autoexception:: pysolarmanv5.NoSocketAvailableError
