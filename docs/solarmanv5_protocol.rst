@@ -35,10 +35,13 @@ The Header is always 11 bytes and is composed of:
 * **Control Code** (*two bytes*) – Describes the type of V5 frame.
   For Modbus RTU requests, the control code is ``0x4510``.
   For Modbus RTU responses, the control code is ``0x1510``.
-* **Serial** (*two bytes*) – Appears to be a sequence number. pysolarmanv5 sets
-  this field to ``0x0000`` on outgoing requests.
-  The data logging stick increments this field for each reply sent (either to
-  Solarman Cloud or local requests).
+* **Serial** (*two bytes*) – This field acts as a two-way sequence number. On
+  outgoing requests, the first byte of this field is echoed back in the same
+  position on incoming responses. pysolarmanv5 expoits this property to detect
+  invalid responses. This is done by initialising this byte to a random value,
+  and incrementing for each subsequent request.
+  The second byte is incremented by the data logging stick for every response
+  sent (either to Solarman Cloud or local requests).
 * **Logger Serial** (*four bytes*) – Serial number of Solarman data logging
   stick
 
@@ -143,7 +146,7 @@ Request Frame Format
       0-7: Start (0xA5)\n(1 byte)
       8-23: Length\n(2 bytes)
       24-39: Control Code (0x1045)\n(2 bytes)
-      40-55: Serial (0x0000)\n(2 bytes)
+      40-55: Serial (0xAA00)\n(2 bytes)
       56-87: Logger Serial\n(4 bytes)
       88-95: Frame Type (0x2)\n(1 byte)
       96-111: Sensor Type (0x0000)\n(2 bytes)
@@ -172,7 +175,7 @@ Response Frame Format
       0-7: Start (0xA5)\n(1 byte)
       8-23: Length\n(2 bytes)
       24-39: Control Code (0x1015)\n(2 bytes)
-      40-55: Serial (0x0000)\n(2 bytes)
+      40-55: Serial (0xAA00)\n(2 bytes)
       56-87: Logger Serial\n(4 bytes)
       88-95: Frame Type (0x02)\n(1 byte)
       96-103: Status (0x01)\n(1 byte)

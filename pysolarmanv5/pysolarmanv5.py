@@ -4,6 +4,7 @@ import socket
 import logging
 
 from umodbus.client.serial import rtu
+from random import randrange
 
 
 class V5FrameError(Exception):
@@ -83,6 +84,7 @@ class PySolarmanV5:
         self.verbose = kwargs.get("verbose", False)
         self.socket_timeout = kwargs.get("socket_timeout", 60)
         self.v5_error_correction = kwargs.get("error_correction", False)
+        self.sequence_number = None
 
         if self.verbose:
             self.log.setLevel("DEBUG")
@@ -98,7 +100,7 @@ class PySolarmanV5:
         self.v5_start = bytes.fromhex("A5")
         self.v5_length = bytes.fromhex("0000")  # placeholder value
         self.v5_controlcode = struct.pack("<H", 0x4510)
-        self.v5_serial = bytes.fromhex("0000")
+        self.v5_serial = bytes.fromhex("0000")  # placeholder value
         self.v5_loggerserial = struct.pack("<I", self.serial)
         self.v5_frametype = bytes.fromhex("02")
         self.v5_sensortype = bytes.fromhex("0000")
@@ -123,6 +125,21 @@ class PySolarmanV5:
             checksum += frame[i] & 0xFF
         return int((checksum & 0xFF))
 
+    def _get_next_sequence_number(self):
+        """Get the next sequence number for use in outgoing packets
+
+        If ``sequence_number`` is None, generate a random int as initial value.
+
+        :return: Sequence number
+        :rtype: int
+
+        """
+        if self.sequence_number == None:
+            self.sequence_number = randrange(0x01, 0xFF)
+        else:
+            self.sequence_number = (self.sequence_number + 1) & 0xFF
+        return self.sequence_number
+
     def _v5_frame_encoder(self, modbus_frame):
         """Take a modbus RTU frame and encode it in a V5 data logging stick frame
 
@@ -134,6 +151,7 @@ class PySolarmanV5:
         """
 
         self.v5_length = struct.pack("<H", 15 + len(modbus_frame))
+        self.v5_serial = struct.pack("<H", self._get_next_sequence_number())
 
         v5_header = bytearray(
             self.v5_start
@@ -173,11 +191,12 @@ class PySolarmanV5:
 
         1) V5 start and end are correct (``0xA5`` and ``0x15`` respectively)
         2) V5 checksum is correct
-        3) V5 data logger serial number is correct (in most (all?) instances the
+        3) V5 outgoing sequence number has been echoed back to us (byte 5)
+        4) V5 data logger serial number is correct (in most (all?) instances the
            reply is correct, but request can obviously be incorrect)
-        4) V5 control code is correct (``0x1510``)
-        5) v5_frametype contains the correct value (``0x02`` in byte 11)
-        6) Modbus RTU frame length is at least 5 bytes (vast majority of RTU
+        5) V5 control code is correct (``0x1510``)
+        6) v5_frametype contains the correct value (``0x02`` in byte 11)
+        7) Modbus RTU frame length is at least 5 bytes (vast majority of RTU
            frames will be >=6 bytes, but valid 5 byte error/exception RTU frames
            are possible)
 
@@ -204,6 +223,8 @@ class PySolarmanV5:
             raise V5FrameError("V5 frame contains invalid start or end values")
         if v5_frame[frame_len - 2] != self._calculate_v5_frame_checksum(v5_frame):
             raise V5FrameError("V5 frame contains invalid V5 checksum")
+        if v5_frame[5] != self.sequence_number:
+            raise V5FrameError("V5 frame contains invalid sequence number")
         if v5_frame[7:11] != self.v5_loggerserial:
             raise V5FrameError("V5 frame contains incorrect data logger serial number")
         if v5_frame[3:5] != struct.pack("<H", 0x1510):
