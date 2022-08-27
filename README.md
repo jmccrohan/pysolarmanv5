@@ -21,6 +21,9 @@ The Solarman V5 protocol is documented [here](https://pysolarmanv5.readthedocs.i
 
 A user contributed list of supported devices is available [here](https://github.com/jmccrohan/pysolarmanv5/issues/11).
 
+If you are unsure if your device is supported, please use the [solarman_scan](https://github.com/jmccrohan/pysolarmanv5/blob/main/utils/solarman_scan.py) 
+utility to find compatible data logging sticks on your local network.
+
 Please note that the **Solis S3-WIFI-ST** data logging stick is **NOT supported**.  
 See [GH issue #8](https://github.com/jmccrohan/pysolarmanv5/issues/8) for further information. 
 
