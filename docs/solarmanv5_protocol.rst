@@ -62,9 +62,9 @@ is composed of:
   mean the solar inverter.
 * **Sensor Type** (*two bytes*) – Denotes the sensor type. pysolarmanv5 sets
   this to ``0x0000`` on outgoing requests.
-* **Delivery Time** (*four bytes*) – Denotes the frame delivery time. See
-  corresponding response field of same name for further details. pysolarmanv5
-  sets this to ``0x00000000`` on outgoing requests.
+* **Total Working Time** (*four bytes*) – Denotes the frame total working time.
+  See corresponding response field of same name for further details.
+  pysolarmanv5 sets this to ``0x00000000`` on outgoing requests.
 * **Power On Time** (*four bytes*) – Denotes the frame power on time. See
   corresponding response field of same name for further details. pysolarmanv5
   sets this to ``0x00000000`` on outgoing requests.
@@ -84,24 +84,25 @@ and is composed of:
   * ``0x01``: Data Logging Stick
   * ``0x00``: Solarman Cloud (*or keep alive?*)
 * **Status** (*one byte*) – Denotes the request status. ``0x01`` appears to
-  denote success.
-* **Delivery Time** (*four bytes*) – Denotes the time since data logging stick
-  was booted for the very first time, in seconds. Other implementations have
-  this field named *TimeOutOfFactory*.
+  denote real-time data.
+* **Total Working Time** (*four bytes*) – Denotes the number of seconds that
+  data logging stick has been operating. Other implementations have this
+  field named *TimeOutOfFactory*.
 * **Power On Time** (*four bytes*) – Denotes the current uptime of the data
   logging stick in seconds.
-* **Offset Time** (*four bytes*) – Denotes the current boot time of the data
-  logging stick in seconds since the Unix epoch.
+* **Offset Time** (*four bytes*) – Denotes offset timestamp, in seconds. This is
+  defined as current data logging stick timestamp minus **Total Working Time**.
 * **Modbus RTU Frame** (*variable length*) – Modbus RTU response frame.
 
 Response Timestamp Fields
 """""""""""""""""""""""""
 The following statements in relation to the timestamp fields are true:
 
-* **Delivery Time** - **Power On Time** = Device Total Operation Time (as shown
-  in Solarman Cloud).
-* **Delivery Time** + **Offset Time** = V5 frame timestamp, in seconds since the
-  Unix epoch.
+* **Total Working Time** minus **Power On Time** = Device Total Operation Time
+  (as shown in Solarman Cloud).
+* **Total Working Time** plus **Offset Time** = Data acquisition timestamp. By
+  definition, pysolarmanv5 frames are real-time data frames, so this is
+  equivalent to the current unix timestamp.
 
 Trailer
 ^^^^^^^
@@ -150,7 +151,7 @@ Request Frame Format
       56-87: Logger Serial\n(4 bytes)
       88-95: Frame Type (0x2)\n(1 byte)
       96-111: Sensor Type (0x0000)\n(2 bytes)
-      112-143: Delivery Time (0x00000000)\n(4 bytes)
+      112-143: Total Working Time (0x00000000)\n(4 bytes)
       144-175: Power On Time (0x00000000)\n(4 bytes)
       176-207: Offset Time (0x00000000)\n(4 bytes)
       208-271: Modbus RTU Frame\n(variable bytes)
@@ -179,7 +180,7 @@ Response Frame Format
       56-87: Logger Serial\n(4 bytes)
       88-95: Frame Type (0x02)\n(1 byte)
       96-103: Status (0x01)\n(1 byte)
-      104-135: Delivery Time\n(4 bytes)
+      104-135: Total Working Time\n(4 bytes)
       136-167: Power On Time\n(4 bytes)
       168-199: Offset Time\n(4 bytes)
       200-255: Modbus RTU Frame\n(variable bytes)
