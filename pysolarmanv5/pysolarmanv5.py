@@ -123,7 +123,7 @@ class PySolarmanV5:
         checksum = 0
         for i in range(1, len(frame) - 2, 1):
             checksum += frame[i] & 0xFF
-        return int((checksum & 0xFF))
+        return int(checksum & 0xFF)
 
     def _get_next_sequence_number(self):
         """Get the next sequence number for use in outgoing packets
@@ -134,7 +134,7 @@ class PySolarmanV5:
         :rtype: int
 
         """
-        if self.sequence_number == None:
+        if self.sequence_number is None:
             self.sequence_number = randrange(0x01, 0xFF)
         else:
             self.sequence_number = (self.sequence_number + 1) & 0xFF
