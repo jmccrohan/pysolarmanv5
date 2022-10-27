@@ -1,0 +1,36 @@
+[project]
+name = "pysolarmanv5"
+version = "2.4.0"
+description = "A Python library for interacting with Solarman (IGEN-Tech) v5 based Solar Data Loggers"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT License"}
+authors = [{name = "Jonathan McCrohan", email = "jmccrohan@gmail.com"}]
+keywords = ["solarman", "igen-tech", "modbus", "solar", "inverter", "solarmanv5"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Topic :: Utilities",
+    "License :: OSI Approved :: MIT License",
+]
+dependencies = [
+    "umodbus",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black",
+    "pylint",
+]
+
+[project.urls]
+homepage = "https://github.com/jmccrohan/pysolarmanv5"
+repository = "https://github.com/jmccrohan/pysolarmanv5"
+documentation = "https://pysolarmanv5.readthedocs.io/"
+changelog = "https://pysolarmanv5.readthedocs.io/en/latest/changelog.html"
+
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["pysolarmanv5"]
