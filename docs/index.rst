@@ -108,6 +108,19 @@ To install the latest development version from git, run:
 
    pip install git+https://github.com/jmccrohan/pysolarmanv5.git
 
+Projects using pysolarmanv5
+---------------------------
+* `NosIreland/solismon3 <https://github.com/NosIreland/solismon3>`_
+* `NosIreland/solismod <https://github.com/NosIreland/solismod>`_
+* `jmccrohan/ha_pyscript_pysolarmanv5 <https://github.com/jmccrohan/ha_pyscript_pysolarmanv5>`_
+* `YodaDaCoda/hass-solarman-modbus <https://github.com/YodaDaCoda/hass-solarman-modbus>`_
+* `schwatter/solarman_mqtt <https://github.com/schwatter/solarman_mqtt>`_
+* `RonnyKempe/solismon <https://github.com/RonnyKempe/solismon>`_
+* `toledobastos/solarman_battery_autocharge <https://github.com/toledobastos/solarman_battery_autocharge>`_
+* `AndyTaylorTweet/solis2mqtt <https://github.com/AndyTaylorTweet/solis2mqtt>`_
+* `pixellos/codereinvented.automation.py <https://github.com/pixellos/codereinvented.automation.py>`_
+* `cjgwhite/hass-solar <https://github.com/cjgwhite/hass-solar>`_
+
 Contributions
 -------------
 Contributions welcome. Please raise any Issues / Pull Requests via
