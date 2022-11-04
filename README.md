@@ -27,6 +27,9 @@ utility to find compatible data logging sticks on your local network.
 Please note that the **Solis S3-WIFI-ST** data logging stick is **NOT supported**.  
 See [GH issue #8](https://github.com/jmccrohan/pysolarmanv5/issues/8) for further information. 
 
+Some Ethernet data logging sticks have native support Modbus TCP and therefore **do not require pysolarmanv5**.
+See [GH issue #5](https://github.com/jmccrohan/pysolarmanv5/issues/5) for further information. 
+
 ## Dependencies
 
 - pysolarmanv5 requires Python 3.8 or greater.
@@ -41,6 +44,19 @@ To install the latest stable version of pysolarmanv5 from PyPi, run:
 To install the latest development version from git, run:
 
 `pip install git+https://github.com/jmccrohan/pysolarmanv5.git`
+
+## Projects using pysolarmanv5
+
+- [NosIreland/solismon3](https://github.com/NosIreland/solismon3)
+- [NosIreland/solismod](https://github.com/NosIreland/solismod)
+- [jmccrohan/ha_pyscript_pysolarmanv5](https://github.com/jmccrohan/ha_pyscript_pysolarmanv5)
+- [YodaDaCoda/hass-solarman-modbus](https://github.com/YodaDaCoda/hass-solarman-modbus)
+- [schwatter/solarman_mqtt](https://github.com/schwatter/solarman_mqtt)
+- [RonnyKempe/solismon](https://github.com/RonnyKempe/solismon)
+- [toledobastos/solarman_battery_autocharge](https://github.com/toledobastos/solarman_battery_autocharge)
+- [AndyTaylorTweet/solis2mqtt](https://github.com/AndyTaylorTweet/solis2mqtt)
+- [pixellos/codereinvented.automation.py](https://github.com/pixellos/codereinvented.automation.py)
+- [cjgwhite/hass-solar](https://github.com/cjgwhite/hass-solar)
 
 ## Contributions
 
