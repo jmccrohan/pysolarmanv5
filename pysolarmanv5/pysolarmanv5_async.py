@@ -28,8 +28,6 @@ class PySolarmanV5Async:
     :type port: int, optional
     :param mb_slave_id: Inverter Modbus slave ID, defaults to 1
     :type mb_slave_id: int, optional
-    :param socket_timeout: Socket timeout duration in seconds, defaults to 60
-    :type socket_timeout: int, optional
     :param v5_error_correction: Enable naive error correction for V5 frames,
         defaults to False
     :type v5_error_correction: bool, optional
@@ -65,7 +63,6 @@ class PySolarmanV5Async:
         self.port = kwargs.get("port", 8899)
         self.mb_slave_id = kwargs.get("mb_slave_id", 1)
         self.verbose = kwargs.get("verbose", False)
-        self.socket_timeout = kwargs.get("socket_timeout", 60)
         self.v5_error_correction = kwargs.get("error_correction", False)
         self.sequence_number = None
 
@@ -73,7 +70,6 @@ class PySolarmanV5Async:
             self.log.setLevel("DEBUG")
 
         self._v5_frame_def()
-        ''' Socket is not exposed directly here '''
         self._needs_reconnect = kwargs.get("auto_reconnect", False)
         """ Auto-reconnect feature """
         self.reader: asyncio.StreamReader = None  # noqa
@@ -97,6 +93,9 @@ class PySolarmanV5Async:
                 self.writer.write_eof()
                 await self.writer.drain()
                 self.writer.close()
+        except:
+            pass
+        try:
             self.reader, self.writer = await asyncio.open_connection(self.address, self.port)
         except:
             raise NoSocketAvailableError(f'Cannot open connection to {self.address}')
@@ -246,16 +245,24 @@ class PySolarmanV5Async:
         return modbus_frame
 
     async def _conn_keeper(self):
+        """ Socket reader loop with extra logic when auto-reconnect is enabled
+        """
         while True:
             data = await self.reader.read(1024)
-            if self.data_wanted_ev.is_set():
-                await self.data_queue.put(data)
-                self.data_wanted_ev.clear()
-            elif data == b'':
+
+            if data == b'':
                 """ Socket closed by the remote side """
                 if self._needs_reconnect:
                     self.log.debug('Socket closed. Auto-Reconnect enabled. Trying to establish a new connection...')
                     await self.reconnect()
+                    continue
+                else:
+                    if self.data_wanted_ev.is_set():
+                        await self.data_queue.put(data)
+                    break
+            elif self.data_wanted_ev.is_set():
+                await self.data_queue.put(data)
+                self.data_wanted_ev.clear()
             else:
                 self.log.debug('Data received but nobody waits for it... Discarded')
                 self.log.debug(data)
@@ -274,24 +281,16 @@ class PySolarmanV5Async:
 
         """
 
-
-        #self.sock.sendall(data_logging_stick_frame)
-        print(asyncio.get_running_loop())
-        '''
-        if self.reader.at_eof() is False:
-            self.log.warning('Data queued without request! Will be discarded!')
-            try:
-                _ = await asyncio.wait_for(self.reader.read(-1), .2)  # Read to the EOF before sending anything
-            except (asyncio.TimeoutError, asyncio.exceptions.CancelledError):
-                pass
-        '''
-
         self.log.debug("SENT: " + data_logging_stick_frame.hex(" "))
         self.data_wanted_ev.set()
         self.writer.write(data_logging_stick_frame)
-        await self.writer.drain()
-        #v5_response = self.sock.recv(1024)
-        #v5_response = await asyncio.wait_for(self.reader.read(1024), self.socket_timeout)
+        try:
+            await self.writer.drain()
+        except ConnectionResetError:
+            if self._needs_reconnect:
+                self.log.debug('Connection closed. Auto-reconnect enabled.  Will try again after .1 seconds')
+                await asyncio.sleep(.1)
+                self.writer.write(data_logging_stick_frame)
         v5_response = await self.data_queue.get()
 
         self.log.debug("RECD: " + v5_response.hex(" "))
@@ -323,16 +322,6 @@ class PySolarmanV5Async:
         mb_response_frame = await self._send_receive_modbus_frame(mb_request_frame)
         modbus_values = rtu.parse_response_adu(mb_response_frame, mb_request_frame)
         return modbus_values
-
-    def _create_socket(self):
-        """Creates and returns a socket"""
-        try:
-            sock = socket.create_connection(
-                (self.address, self.port), self.socket_timeout
-            )
-        except OSError:
-            return None
-        return sock
 
     @staticmethod
     def twos_complement(val, num_bits):
