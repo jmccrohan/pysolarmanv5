@@ -1,17 +1,11 @@
 """pysolarmanv5.py"""
-import struct
-import socket
-import logging
 import asyncio
-
 from umodbus.client.serial import rtu
-from random import randrange
-from multiprocessing import Queue, Event
-
-from .pysolarmanv5 import V5FrameError, NoSocketAvailableError
+from multiprocessing import Event
+from .pysolarmanv5 import NoSocketAvailableError, PySolarmanV5
 
 
-class PySolarmanV5Async:
+class PySolarmanV5Async(PySolarmanV5):
     """
     The PySolarmanV5Async class establishes a TCP connection to a Solarman V5 data
     logging stick on a call to connect() and exposes methods to send/receive
@@ -51,25 +45,8 @@ class PySolarmanV5Async:
 
     def __init__(self, address, serial, **kwargs):
         """Constructor"""
-
-        self.log = kwargs.get("logger", None)
-        if self.log is None:
-            logging.basicConfig()
-            self.log = logging.getLogger(__name__)
-
-        self.address = address
-        self.serial = serial
-
-        self.port = kwargs.get("port", 8899)
-        self.mb_slave_id = kwargs.get("mb_slave_id", 1)
-        self.verbose = kwargs.get("verbose", False)
-        self.v5_error_correction = kwargs.get("error_correction", False)
-        self.sequence_number = None
-
-        if self.verbose:
-            self.log.setLevel("DEBUG")
-
-        self._v5_frame_def()
+        kwargs.update({'socket': ''})
+        super(PySolarmanV5Async, self).__init__(address, serial, **kwargs)
         self._needs_reconnect = kwargs.get("auto_reconnect", False)
         """ Auto-reconnect feature """
         self.reader: asyncio.StreamReader = None  # noqa
@@ -99,150 +76,6 @@ class PySolarmanV5Async:
             self.reader, self.writer = await asyncio.open_connection(self.address, self.port)
         except:
             raise NoSocketAvailableError(f'Cannot open connection to {self.address}')
-
-    def _v5_frame_def(self):
-        """Define and construct V5 request frame structure."""
-        self.v5_start = bytes.fromhex("A5")
-        self.v5_length = bytes.fromhex("0000")  # placeholder value
-        self.v5_controlcode = struct.pack("<H", 0x4510)
-        self.v5_serial = bytes.fromhex("0000")  # placeholder value
-        self.v5_loggerserial = struct.pack("<I", self.serial)
-        self.v5_frametype = bytes.fromhex("02")
-        self.v5_sensortype = bytes.fromhex("0000")
-        self.v5_deliverytime = bytes.fromhex("00000000")
-        self.v5_powerontime = bytes.fromhex("00000000")
-        self.v5_offsettime = bytes.fromhex("00000000")
-        self.v5_checksum = bytes.fromhex("00")  # placeholder value
-        self.v5_end = bytes.fromhex("15")
-
-    @staticmethod
-    def _calculate_v5_frame_checksum(frame):
-        """Calculate checksum on all frame bytes except head, end and checksum
-
-        :param frame: V5 frame
-        :type frame: bytes
-        :return: Checksum value of V5 frame
-        :rtype: int
-
-        """
-        checksum = 0
-        for i in range(1, len(frame) - 2, 1):
-            checksum += frame[i] & 0xFF
-        return int(checksum & 0xFF)
-
-    def _get_next_sequence_number(self):
-        """Get the next sequence number for use in outgoing packets
-
-        If ``sequence_number`` is None, generate a random int as initial value.
-
-        :return: Sequence number
-        :rtype: int
-
-        """
-        if self.sequence_number is None:
-            self.sequence_number = randrange(0x01, 0xFF)
-        else:
-            self.sequence_number = (self.sequence_number + 1) & 0xFF
-        return self.sequence_number
-
-    def _v5_frame_encoder(self, modbus_frame):
-        """Take a modbus RTU frame and encode it in a V5 data logging stick frame
-
-        :param modbus_frame: Modbus RTU frame
-        :type modbus_frame: bytes
-        :return: V5 frame
-        :rtype: bytearray
-
-        """
-
-        self.v5_length = struct.pack("<H", 15 + len(modbus_frame))
-        self.v5_serial = struct.pack("<H", self._get_next_sequence_number())
-
-        v5_header = bytearray(
-            self.v5_start
-            + self.v5_length
-            + self.v5_controlcode
-            + self.v5_serial
-            + self.v5_loggerserial
-        )
-
-        v5_payload = bytearray(
-            self.v5_frametype
-            + self.v5_sensortype
-            + self.v5_deliverytime
-            + self.v5_powerontime
-            + self.v5_offsettime
-            + modbus_frame
-        )
-
-        v5_trailer = bytearray(self.v5_checksum + self.v5_end)
-
-        v5_frame = v5_header + v5_payload + v5_trailer
-
-        v5_frame[len(v5_frame) - 2] = self._calculate_v5_frame_checksum(v5_frame)
-        return v5_frame
-
-    def _v5_frame_decoder(self, v5_frame):
-        """Decodes a V5 data logging stick frame and returns a modbus RTU frame
-
-        Modbus RTU frame will start at position 25 through ``len(v5_frame)-2``.
-
-        Occasionally logger can send a spurious 'keep-alive' reply with a
-        control code of ``0x4710``. These messages can either take the place of,
-        or be appended to valid ``0x1510`` responses. In this case, the v5_frame
-        will contain an invalid checksum.
-
-        Validate the following:
-
-        1) V5 start and end are correct (``0xA5`` and ``0x15`` respectively)
-        2) V5 checksum is correct
-        3) V5 outgoing sequence number has been echoed back to us (byte 5)
-        4) V5 data logger serial number is correct (in most (all?) instances the
-           reply is correct, but request can obviously be incorrect)
-        5) V5 control code is correct (``0x1510``)
-        6) v5_frametype contains the correct value (``0x02`` in byte 11)
-        7) Modbus RTU frame length is at least 5 bytes (vast majority of RTU
-           frames will be >=6 bytes, but valid 5 byte error/exception RTU frames
-           are possible)
-
-        :param v5_frame: V5 frame
-        :type v5_frame: bytes
-        :return: Modbus RTU Frame
-        :rtype: bytes
-        :raises V5FrameError: If parsing fails due to invalid V5 frame
-
-        """
-        frame_len = len(v5_frame)
-        (payload_len,) = struct.unpack("<H", v5_frame[1:3])
-
-        frame_len_without_payload_len = 13
-
-        if frame_len != (frame_len_without_payload_len + payload_len):
-            self.log.debug("frame_len does not match payload_len.")
-            if self.v5_error_correction:
-                frame_len = frame_len_without_payload_len + payload_len
-
-        if (v5_frame[0] != int.from_bytes(self.v5_start, byteorder="big")) or (
-            v5_frame[frame_len - 1] != int.from_bytes(self.v5_end, byteorder="big")
-        ):
-            raise V5FrameError("V5 frame contains invalid start or end values")
-        if v5_frame[frame_len - 2] != self._calculate_v5_frame_checksum(v5_frame):
-            raise V5FrameError("V5 frame contains invalid V5 checksum")
-        if v5_frame[5] != self.sequence_number:
-            raise V5FrameError("V5 frame contains invalid sequence number")
-        if v5_frame[7:11] != self.v5_loggerserial:
-            raise V5FrameError("V5 frame contains incorrect data logger serial number")
-        if v5_frame[3:5] != struct.pack("<H", 0x1510):
-            raise V5FrameError("V5 frame contains incorrect control code")
-        if v5_frame[11] != int("02", 16):
-            raise V5FrameError("V5 frame contains invalid frametype")
-
-        modbus_frame = v5_frame[25 : frame_len - 2]
-
-        if len(modbus_frame) < 5:
-            raise V5FrameError("V5 frame does not contain a valid Modbus RTU frame")
-
-        return modbus_frame
 
     async def _conn_keeper(self):
         """ Socket reader loop with extra logic when auto-reconnect is enabled
@@ -322,63 +155,6 @@ class PySolarmanV5Async:
         mb_response_frame = await self._send_receive_modbus_frame(mb_request_frame)
         modbus_values = rtu.parse_response_adu(mb_response_frame, mb_request_frame)
         return modbus_values
-
-    @staticmethod
-    def twos_complement(val, num_bits):
-        """Calculate 2s Complement
-
-        :param val: Value to calculate
-        :type val: int
-        :param num_bits: Number of bits
-        :type num_bits: int
-
-        :return: 2s Complement value
-        :rtype: int
-
-        """
-        if val < 0:
-            val = (1 << num_bits) + val
-        else:
-            if val & (1 << (num_bits - 1)):
-                val = val - (1 << num_bits)
-        return val
-
-    def _format_response(self, modbus_values, **kwargs):
-        """Formats a list of modbus register values (16 bits each) as a single value
-
-        :param modbus_values: Modbus register values
-        :type modbus_values: list[int]
-        :param scale: Scaling factor
-        :type scale: int
-        :param signed: Signed value (2s complement)
-        :type signed: bool
-        :param bitmask: Bitmask value
-        :type bitmask: int
-        :param bitshift: Bitshift value
-        :type bitshift: int
-        :return: Formatted register value
-        :rtype: int
-
-        """
-        scale = kwargs.get("scale", 1)
-        signed = kwargs.get("signed", False)
-        bitmask = kwargs.get("bitmask", None)
-        bitshift = kwargs.get("bitshift", None)
-        response = 0
-        num_registers = len(modbus_values)
-
-        for i, j in zip(range(num_registers), range(num_registers - 1, -1, -1)):
-            response += modbus_values[i] << (j * 16)
-        if signed:
-            response = self.twos_complement(response, num_registers * 16)
-        if scale != 1:
-            response *= scale
-        if bitmask is not None:
-            response &= bitmask
-        if bitshift is not None:
-            response >>= bitshift
-
-        return response
 
     async def read_input_registers(self, register_addr, quantity):
         """Read input registers from modbus slave (Modbus function code 4)
@@ -570,8 +346,8 @@ class PySolarmanV5Async:
 
         .. warning::
            This is not implemented as a native Modbus function. It is a software
-           implementation using a combination of :func:`read_holding_registers() <pysolarmanv5.PySolarmanV5.read_holding_registers>`
-           and :func:`write_holding_register() <pysolarmanv5.PySolarmanV5.write_holding_register>`.
+           implementation using a combination of :func:`read_holding_registers()
+           and :func:`write_holding_register()
 
            It is therefore **not atomic**.
 
@@ -601,7 +377,7 @@ class PySolarmanV5Async:
     async def send_raw_modbus_frame(self, mb_request_frame):
         """Send raw modbus frame and return modbus response frame
 
-        Wrapper around internal method :func:`_send_receive_modbus_frame() <pysolarmanv5.PySolarmanV5._send_receive_modbus_frame>`
+        Wrapper around internal method :func:`_send_receive_modbus_frame()
 
         :param mb_request_frame: Modbus frame
         :type mb_request_frame: bytearray
@@ -612,9 +388,9 @@ class PySolarmanV5Async:
         return await self._send_receive_modbus_frame(mb_request_frame)
 
     async def send_raw_modbus_frame_parsed(self, mb_request_frame):
-        """Send raw modbus frame and return parsed modbusresponse list
+        """Send raw modbus frame and return parsed modbus response list
 
-        Wrapper around internal method :func:`_get_modbus_response() <pysolarmanv5.PySolarmanV5._get_modbus_response>`
+        Wrapper around internal method :func:`_get_modbus_response()
 
         :param mb_request_frame: Modbus frame
         :type mb_request_frame: bytearray
