@@ -55,7 +55,13 @@ class PySolarmanV5Async(PySolarmanV5):
         self.data_wanted_ev = Event()
         self.reader_task: asyncio.Task = None  # noqa
 
-    async def connect(self):
+    async def connect(self) -> None:
+        """
+        Connect to the data logging stick and start the socket reader loop
+
+        :return: None
+        :raises NoSocketAvailableError: When connection cannot be established
+        """
         loop = asyncio.get_running_loop()
         try:
             self.reader, self.writer = await asyncio.open_connection(self.address, self.port)
@@ -63,8 +69,14 @@ class PySolarmanV5Async(PySolarmanV5):
         except:
             raise NoSocketAvailableError(f'Cannot open connection to {self.address}')
 
-    async def reconnect(self):
-        """ Reconnect routine """
+    async def reconnect(self) -> None:
+        """
+        Reconnect to the data logging stick. It's called automatically if the auto-reconnect option is enabled
+
+        :return: None
+        :raises NoSocketAvailableError: When connection cannot be re-established
+
+        """
         try:
             if self.reader and self.writer:
                 self.writer.write_eof()
@@ -77,11 +89,25 @@ class PySolarmanV5Async(PySolarmanV5):
         except:
             raise NoSocketAvailableError(f'Cannot open connection to {self.address}')
 
-    async def _conn_keeper(self):
-        """ Socket reader loop with extra logic when auto-reconnect is enabled
+    async def _conn_keeper(self) -> None:
+        """
+        Socket reader loop with extra logic when auto-reconnect is enabled
+
+        :return: None
         """
         while True:
-            data = await self.reader.read(1024)
+            try:
+                data = await self.reader.read(1024)
+            except ConnectionResetError:
+                if self._needs_reconnect:
+                    try:
+                        await self.reconnect()
+                        continue
+                    except NoSocketAvailableError:
+                        self.log.debug('Auto-reconnect enabled but connection cannot be created')
+                        break
+                else:
+                    break
 
             if data == b'':
                 """ Socket closed by the remote side """
@@ -104,6 +130,9 @@ class PySolarmanV5Async(PySolarmanV5):
                     self.writer.write(data)
                     await self.writer.drain()
 
+        self.reader = None
+        self.writer = None
+
     async def _send_receive_v5_frame(self, data_logging_stick_frame):
         """Send v5 frame to the data logger and receive response
 
@@ -116,14 +145,20 @@ class PySolarmanV5Async(PySolarmanV5):
 
         self.log.debug("SENT: " + data_logging_stick_frame.hex(" "))
         self.data_wanted_ev.set()
-        self.writer.write(data_logging_stick_frame)
         try:
+            self.writer.write(data_logging_stick_frame)
             await self.writer.drain()
+        except AttributeError:
+            raise NoSocketAvailableError('Connection already closed')
         except ConnectionResetError:
             if self._needs_reconnect:
                 self.log.debug('Connection closed. Auto-reconnect enabled.  Will try again after .1 seconds')
+                await self.reconnect()
                 await asyncio.sleep(.1)
                 self.writer.write(data_logging_stick_frame)
+                await self.writer.drain()
+            else:
+                raise
         v5_response = await self.data_queue.get()
 
         self.log.debug("RECD: " + v5_response.hex(" "))
