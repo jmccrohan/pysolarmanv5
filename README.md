@@ -57,6 +57,7 @@ To install the latest development version from git, run:
 - [AndyTaylorTweet/solis2mqtt](https://github.com/AndyTaylorTweet/solis2mqtt)
 - [pixellos/codereinvented.automation.py](https://github.com/pixellos/codereinvented.automation.py)
 - [cjgwhite/hass-solar](https://github.com/cjgwhite/hass-solar)
+- [imcfarla2003/solarconfig](https://github.com/imcfarla2003/solarconfig)
 
 ## Contributions
 
