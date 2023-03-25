@@ -55,7 +55,13 @@ class PySolarmanV5Async(PySolarmanV5):
         self.data_wanted_ev = Event()
         self.reader_task: asyncio.Task = None  # noqa
 
-    async def connect(self):
+    async def connect(self) -> None:
+        """
+        Connect to the data logging stick and start the socket reader loop
+
+        :return: None
+        :raises NoSocketAvailableError: When connection cannot be established
+        """
         loop = asyncio.get_running_loop()
         try:
             self.reader, self.writer = await asyncio.open_connection(self.address, self.port)
@@ -63,46 +69,67 @@ class PySolarmanV5Async(PySolarmanV5):
         except:
             raise NoSocketAvailableError(f'Cannot open connection to {self.address}')
 
-    async def reconnect(self):
-        """ Reconnect routine """
+    async def reconnect(self) -> None:
+        """
+        Reconnect to the data logging stick. It's called automatically if the auto-reconnect option is enabled
+
+        :return: None
+        :raises NoSocketAvailableError: When connection cannot be re-established
+
+        """
         try:
-            if self.reader and self.writer:
-                self.writer.write_eof()
-                await self.writer.drain()
-                self.writer.close()
-        except:
-            pass
-        try:
+            if self.reader_task:
+                self.reader_task.cancel()
             self.reader, self.writer = await asyncio.open_connection(self.address, self.port)
+            loop = asyncio.get_running_loop()
+            self.reader_task = loop.create_task(self._conn_keeper(), name='ConnKeeper')
+            self.log.debug(f'[{self.serial}] Successful reconnect')
         except:
             raise NoSocketAvailableError(f'Cannot open connection to {self.address}')
 
-    async def _conn_keeper(self):
-        """ Socket reader loop with extra logic when auto-reconnect is enabled
+    def _send_data(self, data: bytes):
+        """
+        Sends the data received from the socket to the receiver.
+
+        :param data:
+        :return:
+        """
+        if self.data_wanted_ev.is_set():
+            if not self.data_queue.empty():
+                _ = self.data_queue.get_nowait()
+            self.data_queue.put_nowait(data)
+            self.data_wanted_ev.clear()
+
+    async def _conn_keeper(self) -> None:
+        """
+        Socket reader loop with extra logic when auto-reconnect is enabled
+
+        :return: None
         """
         while True:
-            data = await self.reader.read(1024)
-
+            try:
+                data = await self.reader.read(1024)
+            except ConnectionResetError:
+                self.log.debug(f'[{self.serial}] Connection reset. Closing the socket reader.')
+                break
             if data == b'':
-                """ Socket closed by the remote side """
-                if self._needs_reconnect:
-                    self.log.debug('Socket closed. Auto-Reconnect enabled. Trying to establish a new connection...')
-                    await self.reconnect()
-                    continue
-                else:
-                    if self.data_wanted_ev.is_set():
-                        await self.data_queue.put(data)
-                    break
+                self.log.debug(f'[{self.serial}] Connection closed by the remote. Closing the socket reader.')
+                break
+            elif data.startswith(b'\xa5\x01\x00\x10G'):
+                # Frame with control code 0x4710 - Counter frame
+                self.log.debug(f'[{self.serial}] COUNTER: {data.hex(" ")}')
+                continue
             elif self.data_wanted_ev.is_set():
-                await self.data_queue.put(data)
-                self.data_wanted_ev.clear()
+                self._send_data(data)
             else:
                 self.log.debug('Data received but nobody waits for it... Discarded')
-                self.log.debug(data)
-                if len(data) <= 15:
-                    self.log.debug('Looks like ping. Sending back to the logger')
-                    self.writer.write(data)
-                    await self.writer.drain()
+        self.reader = None
+        self.writer = None
+        self._send_data(b'')
+        if self._needs_reconnect:
+            self.log.debug(f'[{self.serial}] Auto reconnect enabled. Will try to restart the socket reader')
+            loop = asyncio.get_running_loop()
+            loop.create_task(self.reconnect())
 
     async def _send_receive_v5_frame(self, data_logging_stick_frame):
         """Send v5 frame to the data logger and receive response
@@ -111,20 +138,28 @@ class PySolarmanV5Async(PySolarmanV5):
         :type data_logging_stick_frame: bytes
         :return: V5 frame received
         :rtype: bytes
+        :raises NoSocketAvailableError: When the connection to data logging stick is closed.
+            Can occur even when auto-reconnect is enabled.
 
         """
 
         self.log.debug("SENT: " + data_logging_stick_frame.hex(" "))
         self.data_wanted_ev.set()
-        self.writer.write(data_logging_stick_frame)
         try:
+            self.writer.write(data_logging_stick_frame)
             await self.writer.drain()
-        except ConnectionResetError:
-            if self._needs_reconnect:
-                self.log.debug('Connection closed. Auto-reconnect enabled.  Will try again after .1 seconds')
-                await asyncio.sleep(.1)
-                self.writer.write(data_logging_stick_frame)
-        v5_response = await self.data_queue.get()
+            v5_response = await self.data_queue.get()
+            if v5_response == b'':
+                raise NoSocketAvailableError('Connection closed on read. Retry if auto-reconnect is enabled')
+        except AttributeError:
+            raise NoSocketAvailableError('Connection already closed')
+        except NoSocketAvailableError:
+            raise 
+        except Exception as exc:
+            self.log.exception(f'[{self.serial}] Send/Receive error: {exc}')
+            raise
+        finally:
+            self.data_wanted_ev.clear()
 
         self.log.debug("RECD: " + v5_response.hex(" "))
         return v5_response
