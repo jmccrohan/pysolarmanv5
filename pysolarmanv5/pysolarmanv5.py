@@ -2,6 +2,9 @@
 import struct
 import socket
 import logging
+import select
+from threading import Thread, Event
+from multiprocessing import Queue
 
 from umodbus.client.serial import rtu
 from random import randrange
@@ -91,9 +94,15 @@ class PySolarmanV5:
 
         self._v5_frame_def()
 
-        self.sock = kwargs.get("socket", self._create_socket())
+        self.sock: socket.socket = kwargs.get("socket", self._create_socket())
         if self.sock is None:
             raise NoSocketAvailableError("No socket available")
+        self._poll = select.poll()
+        self._data_queue = Queue(maxsize=1)
+        self._data_wanted = Event()
+        self._reader_exit = Event()
+        self._reader_thr = Thread(target=self._data_receiver, daemon=True)
+        self._reader_thr.start()
 
     def _v5_frame_def(self):
         """Define and construct V5 request frame structure."""
@@ -249,12 +258,51 @@ class PySolarmanV5:
 
         """
         self.log.debug("SENT: " + data_logging_stick_frame.hex(" "))
-
+        if not self._reader_thr.is_alive():
+            raise NoSocketAvailableError('Connection already closed.')
         self.sock.sendall(data_logging_stick_frame)
-        v5_response = self.sock.recv(1024)
+        self._data_wanted.set()
+        #v5_response = self.sock.recv(1024)
+        try:
+            v5_response = self._data_queue.get(timeout=self.socket_timeout)
+            self._data_wanted.clear()
+        except TimeoutError:
+            raise
 
         self.log.debug("RECD: " + v5_response.hex(" "))
         return v5_response
+
+    def _data_receiver(self):
+        self._poll.register(self.sock.fileno(), select.POLLIN)
+        while True:
+            events = self._poll.poll(500)
+            if self._reader_exit.is_set():
+                return
+            for event in events:
+                # We are registered only for inbound data on a single socket,
+                # so there is no need to check the (fileno, mask) tuples
+                data = self.sock.recv(1024)
+                if data == b'':
+                    self.log.debug(f'[POLL] Socket closed. Reader thread exiting.')
+                    if self._data_wanted.is_set():
+                        self._data_queue.put_nowait(data)
+                    return
+                elif data.startswith(b'\xa5\x01\x00\x10G'):
+                    # Frame with control code 0x4710 - Counter frame
+                    self.log.debug(f'[{self.serial}] COUNTER: {data.hex(" ")}')
+                    continue
+                if self._data_wanted.is_set():
+                    self._data_queue.put(data, timeout=self.socket_timeout)
+                else:
+                    self.log.debug("[POLL-DISCARDED] RECD: " + data.hex(' '))
+
+    def disconnect(self) -> None:
+        """
+        Disconnect the socket and set a signal for the reader thread to exit
+        """
+        self.sock.send(b'')
+        self.sock.close()
+        self._reader_exit.set()
 
     def _send_receive_modbus_frame(self, mb_request_frame):
         """Encodes mb_frame, sends/receives v5_frame, decodes response
