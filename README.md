@@ -58,6 +58,7 @@ To install the latest development version from git, run:
 - [pixellos/codereinvented.automation.py](https://github.com/pixellos/codereinvented.automation.py)
 - [cjgwhite/hass-solar](https://github.com/cjgwhite/hass-solar)
 - [imcfarla2003/solarconfig](https://github.com/imcfarla2003/solarconfig)
+- [githubDante/deye-controller](https://github.com/githubDante/deye-controller)
 
 ## Contributions
 
