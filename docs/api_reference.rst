@@ -1,10 +1,15 @@
 pysolarmanv5 API Reference
 --------------------------
 
-Main Interface
-^^^^^^^^^^^^^^
+Main (sync) Interface
+^^^^^^^^^^^^^^^^^^^^^
 
 .. autoclass:: pysolarmanv5.PySolarmanV5
+   :members:
+
+Async Interface
+^^^^^^^^^^^^^^^
+.. autoclass:: pysolarmanv5.PySolarmanV5Async
    :members:
 
 Exceptions

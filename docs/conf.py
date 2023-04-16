@@ -2,7 +2,7 @@ import os
 import sys
 from datetime import date
 
-sys.path.insert(0, os.path.abspath('../pysolarmanv5'))
+sys.path.insert(0, os.path.abspath('../'))
 
 project = 'pysolarmanv5'
 copyright = f"{date.today().year}, Jonathan McCrohan"
