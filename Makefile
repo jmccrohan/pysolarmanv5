@@ -7,19 +7,19 @@ help:
 
 .PHONY: requirements # Install requirements
 requirements: requirements.txt
-	pip3 install -r requirements.txt
+	venv/bin/pip3 install -r requirements.txt
 
 .PHONY: show # Show current installed version
 show:
-	pip3 show pysolarmanv5
+	venv/bin/pip3 show pysolarmanv5
 
 .PHONY: black # Run black
 black:
-	python3 -m black pysolarmanv5/*.py
+	venv/bin/python3 -m black pysolarmanv5/*.py
 
 .PHONY: lint # Run lint
 lint:
-	python3 -m pylint pysolarmanv5/*.py -d C0103 -d C0302 -d C0330 -d C0413 -d R0902 -d R0911 -d R0912 -d R0913 -d R0914 -d R0915 -d W0613 -d W0703 -d W0707 || true
+	venv/bin/python3 -m pylint pysolarmanv5/*.py -d C0103 -d C0302 -d C0330 -d C0413 -d R0902 -d R0911 -d R0912 -d R0913 -d R0914 -d R0915 -d W0613 -d W0703 -d W0707 || true
 
 .PHONY: clean # Clean
 clean: clean-build clean-pyc clean-docs
@@ -43,26 +43,38 @@ clean-pyc:
 clean-docs:
 	rm -rf docs/_build
 
+.PHONY: docs-requirements # Install docs requirements
+docs-requirements: docs/requirements.txt
+	venv/bin/pip3 install -r docs/requirements.txt
+
 .PHONY: docs # Build docs
 docs:	clean-docs
-	sphinx-build docs docs/_build
+	venv/bin/sphinx-build docs docs/_build
 
 .PHONY: docs-livehtml # Build docs and serve
 docs-livehtml:
-	sphinx-autobuild --open-browser docs docs/_build --watch pysolarmanv5/
+	venv/bin/sphinx-autobuild --open-browser docs docs/_build --watch pysolarmanv5/
 
 .PHONY: build # Build
 build: clean-build
-	python3 -m build
+	venv/bin/python3 -m build
 
 .PHONY: install-dev # Install in editable mode
 install-dev:
-	python3 -m pip install -e .
+	venv/bin/python3 -m pip install -e .
 
 .PHONY: install # Install
 install:
-	python3 -m pip install .
+	venv/bin/python3 -m pip install .
 
 .PHONY: upload # Upload to PyPI
 upload:
-	python3 -m twine upload dist/*
+	venv/bin/python3 -m twine upload dist/*
+
+.PHONY: venv-create # Create venv in venv/
+venv-create:
+	python3 -m venv venv
+
+.PHONY: venv-shell # Launch venv Python shell
+venv-shell:
+	venv/bin/python3
