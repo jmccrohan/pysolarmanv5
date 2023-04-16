@@ -120,6 +120,8 @@ Projects using pysolarmanv5
 * `AndyTaylorTweet/solis2mqtt <https://github.com/AndyTaylorTweet/solis2mqtt>`_
 * `pixellos/codereinvented.automation.py <https://github.com/pixellos/codereinvented.automation.py>`_
 * `cjgwhite/hass-solar <https://github.com/cjgwhite/hass-solar>`_
+* `imcfarla2003/solarconfig <https://github.com/imcfarla2003/solarconfig>`_
+* `githubDante/deye-controller <https://github.com/githubDante/deye-controller>`_
 
 Contributions
 -------------
