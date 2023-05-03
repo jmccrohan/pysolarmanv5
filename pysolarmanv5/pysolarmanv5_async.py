@@ -45,7 +45,6 @@ class PySolarmanV5Async(PySolarmanV5):
 
     def __init__(self, address, serial, **kwargs):
         """Constructor"""
-        kwargs.update({'socket': ''})
         super(PySolarmanV5Async, self).__init__(address, serial, **kwargs)
         self._needs_reconnect = kwargs.get("auto_reconnect", False)
         """ Auto-reconnect feature """
