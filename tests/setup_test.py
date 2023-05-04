@@ -59,7 +59,7 @@ class MockDatalogger(PySolarmanV5):
 
         """
 
-        self.v5_length = struct.pack("<H", 15 + len(modbus_frame))
+        self.v5_length = struct.pack("<H", 14 + len(modbus_frame))
         self.v5_serial = struct.pack(
             "<BB", self.sequence_number, self._get_next_sequence_number()
         )
@@ -75,7 +75,7 @@ class MockDatalogger(PySolarmanV5):
 
         v5_payload = bytearray(
             self.v5_frametype
-            + bytes.fromhex("00")
+            + bytes.fromhex("01")
             + self.v5_deliverytime
             + self.v5_powerontime
             + self.v5_offsettime
