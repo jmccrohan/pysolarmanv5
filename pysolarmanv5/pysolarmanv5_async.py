@@ -87,6 +87,13 @@ class PySolarmanV5Async(PySolarmanV5):
         except:
             raise NoSocketAvailableError(f'Cannot open connection to {self.address}')
 
+    async def disconnect(self) -> None:
+        self.reader_task.cancel()
+        self.writer.write(b'')
+        await self.writer.drain()
+        self.writer.close()
+
+
     def _send_data(self, data: bytes):
         """
         Sends the data received from the socket to the receiver.
