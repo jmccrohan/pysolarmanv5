@@ -7,6 +7,7 @@ from umodbus.client.serial.redundancy_check import add_crc
 from umodbus.functions import (ReadHoldingRegisters, ReadInputRegisters, ReadCoils,
                                create_function_from_request_pdu)
 import socketserver
+import asyncio
 import random
 import logging
 
@@ -96,7 +97,6 @@ class ServerHandler(socketserver.BaseRequestHandler):
             else:
                 seq_no = data[5]
                 self.sol.sequence_number = data[5]
-                print('RECD: ', data)
                 log.debug(f'[SrvHandler] RECD: {data}')
                 data = bytearray(data)
                 data[3:5] = struct.pack("<H", 0x1510)
@@ -110,7 +110,6 @@ class ServerHandler(socketserver.BaseRequestHandler):
                 log.debug(f'[SrvHandler] DEC: {data}')
                 try:
                     decoded = self.sol._v5_frame_decoder(data)
-                    print(decoded)
                     enc = function_response_from_request(decoded)
                     log.debug(f'[SrvHandler] Generated Raw modbus: {enc.hex(" ")}')
                     enc = self.sol.v5_frame_response_encoder(enc)
@@ -127,8 +126,79 @@ class ServerHandler(socketserver.BaseRequestHandler):
                     pass
 
 
+async def random_delay():
+    await asyncio.sleep(random.randint(10, 50) / 100)
+
+
+async def stream_handler(reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
+    """
+    Stream handler for the async test server
+
+    :param reader:
+    :param writer:
+    :return:
+    """
+    sol = MockDatalogger('0.0.0.0', 2612749371, socket='', auto_reconnect=False)
+    count_packet = bytes.fromhex('a5010010478d69b5b50aa2006415')
+    cl_packets = 0
+
+    while True:
+        data = await reader.read(1024)
+        cl_packets += 1
+        if data == b'':
+            break
+        else:
+            seq_no = data[5]
+            sol.sequence_number = data[5]
+            log.debug(f'[AioHandler] RECD: {data}')
+            data = bytearray(data)
+            data[3:5] = struct.pack("<H", 0x1510)
+            try:
+                checksum = sol._calculate_v5_frame_checksum(bytes(data))
+            except:
+                writer.write(b'')
+                await writer.drain()
+                break
+            data[-2:-1] = checksum.to_bytes(1, byteorder='big')
+            data = bytes(data)
+            log.debug(f'[AioHandler] DEC: {data}')
+            try:
+                decoded = sol._v5_frame_decoder(data)
+                enc = function_response_from_request(decoded)
+                log.debug(f'[AioHandler] Generated Raw modbus: {enc.hex(" ")}')
+                enc = sol.v5_frame_response_encoder(enc)
+                log.debug(f'[AioHandler] Sending frame: {bytes(enc).hex(" ")}')
+                writer.write(bytes(enc))
+                await writer.drain()
+            except Exception as e:
+                log.exception(e)
+                writer.write(data)
+            if cl_packets == 2:
+                # Write counter packet and wait some time to be consumed
+                await random_delay()
+                writer.write(count_packet)
+                await writer.drain()
+                await random_delay()
+            if cl_packets == 2:
+                # Uncomment for auto-reconnect tests
+                # It is unstable, tests can fail from time to time if enabled
+                #writer.close()
+                break
+                #await random_delay()
+                pass
+    try:
+        writer.write(b'')
+        await writer.drain()
+        writer.close()
+    except:
+        pass
+
+
 class SolarmanServer(metaclass=_Singleton):
 
+    """
+    Sync version of the test server
+    """
     def __init__(self, address, port):
         self.srv = socketserver.TCPServer((address, port), ServerHandler)
         self.srv.timeout = 2
@@ -137,3 +207,30 @@ class SolarmanServer(metaclass=_Singleton):
 
     def run(self):
         self.srv.serve_forever(2)
+
+
+class AioSolarmanServer(metaclass=_Singleton):
+    """
+    Async version of the test server
+    """
+    def __init__(self, address, port):
+        self.address = address
+        self.port = port
+        try:
+            self.loop = asyncio.get_running_loop()
+            self.loop.create_task(self.start_server())
+        except RuntimeError:
+            self.loop = asyncio.new_event_loop()
+            thr = threading.Thread(target=self.sync_runner, daemon=True)
+            thr.start()
+
+    async def start_server(self):
+        await asyncio.start_server(stream_handler, host=self.address, port=self.port,
+                                   family=socket.AF_INET, reuse_address=True, reuse_port=True)
+
+    def sync_runner(self):
+        self.loop.create_task(self.start_server())
+        self.loop.run_forever()
+
+
+

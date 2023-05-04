@@ -1,10 +1,11 @@
-from setup_test import SolarmanServer
+from setup_test import SolarmanServer, AioSolarmanServer
 from pysolarmanv5 import PySolarmanV5Async, NoSocketAvailableError
 import asyncio
 import logging
 
 log = logging.getLogger()
-server = SolarmanServer('127.0.0.1', 8899)
+#server = SolarmanServer('127.0.0.1', 8899)
+server = AioSolarmanServer('127.0.0.1', 8899)
 
 
 def test_async():
@@ -26,4 +27,8 @@ def test_async():
         assert len(res) == 4
         await solarman.disconnect()
         log.debug('Async disconnected!!!')
-    asyncio.run(wrapper())
+    try:
+        loop = asyncio.get_running_loop()
+        loop.run_until_complete(wrapper())
+    except RuntimeError:
+        asyncio.run(wrapper())
