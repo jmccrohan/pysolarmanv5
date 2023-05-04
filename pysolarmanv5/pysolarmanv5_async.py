@@ -1,4 +1,4 @@
-"""pysolarmanv5.py"""
+"""pysolarmanv5_async.py"""
 import asyncio
 from umodbus.client.serial import rtu
 from multiprocessing import Event
