@@ -1,4 +1,5 @@
 """pysolarmanv5.py"""
+import queue
 import struct
 import socket
 import logging
@@ -102,14 +103,15 @@ class PySolarmanV5:
         self.sock: socket.socket = kwargs.get("socket", self._create_socket())
         if self.sock is None:
             raise NoSocketAvailableError("No socket available")
-        self._poll = select.poll()
-        self._sock_fd = self.sock.fileno()
-        self._auto_reconnect = False if kwargs.get('socket') else kwargs.get('auto_reconnect', False)
-        self._data_queue = Queue(maxsize=1)
-        self._data_wanted = Event()
-        self._reader_exit = Event()
-        self._reader_thr = Thread(target=self._data_receiver, daemon=True)
-        self._reader_thr.start()
+        if isinstance(self.sock, socket.socket):
+            self._poll = select.poll()
+            self._sock_fd = self.sock.fileno()
+            self._auto_reconnect = False if kwargs.get('socket') else kwargs.get('auto_reconnect', False)
+            self._data_queue = Queue(maxsize=1)
+            self._data_wanted = Event()
+            self._reader_exit = Event()
+            self._reader_thr = Thread(target=self._data_receiver, daemon=True)
+            self._reader_thr.start()
 
     def _v5_frame_def(self):
         """Define and construct V5 request frame structure."""
@@ -292,7 +294,10 @@ class PySolarmanV5:
                 if data == b'':
                     self.log.debug(f'[POLL] Socket closed. Reader thread exiting.')
                     if self._data_wanted.is_set():
-                        self._data_queue.put_nowait(data)
+                        try:
+                            self._data_queue.put_nowait(data)
+                        except queue.Full:
+                            pass
                     self._reconnect()
                     return
                 elif data.startswith(b'\xa5\x01\x00\x10G'):
@@ -309,19 +314,19 @@ class PySolarmanV5:
         Reconnect to the data logger if needed
         """
         if self._reader_thr.is_alive():
-            self.sock.send(b'')
-            self.sock.close()
+            try:
+                self.sock.send(b'')
+                self.sock.close()
+            except OSError:
+                pass
             self._reader_exit.set()
-            self._reader_thr.join(.5)
-            if self._reader_thr.is_alive():
-                raise RuntimeError('Reader thread is still alive!')
-            self._reader_exit.clear()
         if self._auto_reconnect:
             self.log.debug(f'Auto-Reconnect enabled. Trying to establish a new connection')
             self._poll.unregister(self._sock_fd)
             self.sock = self._create_socket()
             if self.sock:
                 self._sock_fd = self.sock.fileno()
+                self._reader_exit.clear()
                 self._reader_thr = Thread(target=self._data_receiver, daemon=True)
                 self._reader_thr.start()
                 self.log.debug(f'Auto-Reconnect successful.')
@@ -334,8 +339,12 @@ class PySolarmanV5:
         """
         Disconnect the socket and set a signal for the reader thread to exit
         """
-        self.sock.send(b'')
-        self.sock.close()
+        self._data_wanted.clear()
+        try:
+            self.sock.send(b'')
+            self.sock.close()
+        except OSError:
+            pass
         self._reader_exit.set()
         self._reader_thr.join(.5)
         self._poll.unregister(self._sock_fd)
