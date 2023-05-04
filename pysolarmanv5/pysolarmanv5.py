@@ -274,6 +274,8 @@ class PySolarmanV5:
         #v5_response = self.sock.recv(1024)
         try:
             v5_response = self._data_queue.get(timeout=self.socket_timeout)
+            if v5_response == b'':
+                raise NoSocketAvailableError('Connection closed on read')
             self._data_wanted.clear()
         except TimeoutError:
             raise
@@ -348,7 +350,6 @@ class PySolarmanV5:
         self._reader_exit.set()
         self._reader_thr.join(.5)
         self._poll.unregister(self._sock_fd)
-
     def _send_receive_modbus_frame(self, mb_request_frame):
         """Encodes mb_frame, sends/receives v5_frame, decodes response
 
