@@ -6,8 +6,12 @@ help:
 	@grep '^.PHONY: .* #' Makefile | sed 's/\.PHONY: \(.*\) # \(.*\)/\1	\2/' | expand -t20
 
 .PHONY: requirements # Install requirements
-requirements: requirements.txt
-	venv/bin/pip3 install -r requirements.txt
+requirements:
+	venv/bin/pip3 install .
+
+.PHONY: requirements-dev # Install requirements-dev
+requirements-dev:
+	venv/bin/pip3 install .[dev]
 
 .PHONY: show # Show current installed version
 show:
@@ -20,6 +24,10 @@ black:
 .PHONY: lint # Run lint
 lint:
 	venv/bin/python3 -m pylint pysolarmanv5/*.py -d C0103 -d C0302 -d C0330 -d C0413 -d R0902 -d R0911 -d R0912 -d R0913 -d R0914 -d R0915 -d W0613 -d W0703 -d W0707 || true
+
+.PHONY: test # Run pytest
+test:
+	venv/bin/pytest
 
 .PHONY: clean # Clean
 clean: clean-build clean-pyc clean-docs
