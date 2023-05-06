@@ -4,8 +4,9 @@ This is a Python module to interact with Solarman (IGEN-Tech) v5 based solar
 inverter data loggers. Modbus RTU frames can be encapsulated in the proprietary
 Solarman v5 protocol and requests sent to the data logger on port tcp/8899.
 
-This module aims to simplify the Solarman v5 protocol, exposing interfaces
-similar to that of the [uModbus](https://pysolarmanv5.readthedocs.io/) library.
+This module aims to simplify the Solarman v5 protocol, exposing both sync and
+async interfaces similar to that of the [uModbus](https://pysolarmanv5.readthedocs.io/)
+library.
 
 Details of the Solarman v5 protocol have been based on the excellent work of
 [Inverter-Data-Logger by XtheOne](https://github.com/XtheOne/Inverter-Data-Logger/)
@@ -59,6 +60,7 @@ To install the latest development version from git, run:
 - [cjgwhite/hass-solar](https://github.com/cjgwhite/hass-solar)
 - [imcfarla2003/solarconfig](https://github.com/imcfarla2003/solarconfig)
 - [githubDante/deye-controller](https://github.com/githubDante/deye-controller)
+- [danfoster/solis](https://github.com/danfoster/solis)
 
 ## Contributions
 

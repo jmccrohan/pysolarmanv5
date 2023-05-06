@@ -22,8 +22,8 @@ pysolarmanv5
 **pysolarmanv5** is a Python module to interact with Solarman (IGEN-Tech) v5
 based solar inverter data loggers. Modbus RTU frames can be encapsulated in the
 proprietary Solarman v5 protocol and requests sent to the data logger on port
-tcp/8899. This module aims to simplify the Solarman v5 protocol, exposing
-interfaces similar to that of the
+tcp/8899. This module aims to simplify the Solarman v5 protocol, exposing both
+sync and async interfaces similar to that of the
 `uModbus <https://github.com/AdvancedClimateSystems/uModbus>`_ library.
 
 pysolarmanv5 supports the following Modbus RTU function codes:
@@ -122,6 +122,7 @@ Projects using pysolarmanv5
 * `cjgwhite/hass-solar <https://github.com/cjgwhite/hass-solar>`_
 * `imcfarla2003/solarconfig <https://github.com/imcfarla2003/solarconfig>`_
 * `githubDante/deye-controller <https://github.com/githubDante/deye-controller>`_
+* `danfoster/solis <https://github.com/danfoster/solis>`_
 
 Contributions
 -------------
