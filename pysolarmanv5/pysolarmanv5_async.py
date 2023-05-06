@@ -391,8 +391,8 @@ class PySolarmanV5Async(PySolarmanV5):
 
         .. warning::
            This is not implemented as a native Modbus function. It is a software
-           implementation using a combination of :func:`read_holding_registers()
-           and :func:`write_holding_register()
+           implementation using a combination of :func:`read_holding_registers() <pysolarmanv5.PySolarmanV5Async.read_holding_registers>`
+           and :func:`write_holding_register() <pysolarmanv5.PySolarmanV5Async.write_holding_register>`
 
            It is therefore **not atomic**.
 

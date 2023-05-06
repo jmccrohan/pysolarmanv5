@@ -58,7 +58,7 @@ class PySolarmanV5:
     :raises NoSocketAvailableError: If no network socket is available
 
     .. versionadded:: v2.5.0
-    :param auto_reconnect: Activates the auto-reconnect functionality. PySolarman will try to
+    :param auto_reconnect: Activates the auto-reconnect functionality. PySolarmanV5 will try to
         keep the connection open. The default is False. Not compatible with custom sockets.
     :type auto_reconnect: Boolean, optional
 
