@@ -6,6 +6,7 @@ import logging
 import select
 from threading import Thread, Event
 from multiprocessing import Queue
+from typing import Any
 
 from umodbus.client.serial import rtu
 from random import randrange
@@ -100,18 +101,15 @@ class PySolarmanV5:
 
         self._v5_frame_def()
 
-        self.sock: socket.socket = kwargs.get("socket", self._create_socket())
-        if self.sock is None:
-            raise NoSocketAvailableError("No socket available")
-        if isinstance(self.sock, socket.socket):
-            self._poll = select.poll()
-            self._sock_fd = self.sock.fileno()
-            self._auto_reconnect = False if kwargs.get('socket') else kwargs.get('auto_reconnect', False)
-            self._data_queue = Queue(maxsize=1)
-            self._data_wanted = Event()
-            self._reader_exit = Event()
-            self._reader_thr = Thread(target=self._data_receiver, daemon=True)
-            self._reader_thr.start()
+        self.sock: socket.socket = None  # noqa
+        self._poll: select.poll = None  # noqa
+        self._sock_fd: int = None  # noqa
+        self._auto_reconnect = False
+        self._data_queue: Queue = None  # noqa
+        self._data_wanted: Event = None  # noqa
+        self._reader_exit: Event = None  # noqa
+        self._reader_thr: Thread = None  # noqa
+        self._socket_setup(kwargs.get('socket'))
 
     def _v5_frame_def(self):
         """Define and construct V5 request frame structure."""
@@ -386,6 +384,21 @@ class PySolarmanV5:
         except OSError:
             return None
         return sock
+
+    def _socket_setup(self, sock: Any):
+        if isinstance(sock, socket.socket) or sock is None:
+            self.sock = sock if sock else self._create_socket()
+            if self.sock is None:
+                raise NoSocketAvailableError("No socket available")
+            self._poll = select.poll()
+            self._sock_fd = self.sock.fileno()
+            self._auto_reconnect = False if sock else True
+            self._data_queue = Queue(maxsize=1)
+            self._data_wanted = Event()
+            self._reader_exit = Event()
+            self._reader_thr = Thread(target=self._data_receiver, daemon=True)
+            self._reader_thr.start()
+            self.log.debug(f'Socket setup completed... {self.sock}')
 
     @staticmethod
     def twos_complement(val, num_bits):

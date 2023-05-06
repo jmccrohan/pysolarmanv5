@@ -49,6 +49,13 @@ def function_response_from_request(req: bytes):
 
 
 class MockDatalogger(PySolarmanV5):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def _socket_setup(self, sock):
+        pass
+
     def v5_frame_response_encoder(self, modbus_frame):
         """Take a modbus RTU frame and encode it as a V5 data logging stick response frame
 
@@ -149,7 +156,7 @@ async def stream_handler(reader: asyncio.StreamReader, writer: asyncio.StreamWri
     :param writer:
     :return:
     """
-    sol = MockDatalogger("0.0.0.0", 2612749371, socket="", auto_reconnect=False)
+    sol = MockDatalogger("0.0.0.0", 2612749371, auto_reconnect=False)
     count_packet = bytes.fromhex("a5010010478d69b5b50aa2006415")
     cl_packets = 0
 
