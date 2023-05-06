@@ -1,10 +1,12 @@
 """pysolarmanv5.py"""
+import queue
 import struct
 import socket
 import logging
 import select
 from threading import Thread, Event
 from multiprocessing import Queue
+from typing import Any
 
 from umodbus.client.serial import rtu
 from random import randrange
@@ -99,17 +101,15 @@ class PySolarmanV5:
 
         self._v5_frame_def()
 
-        self.sock: socket.socket = kwargs.get("socket", self._create_socket())
-        if self.sock is None:
-            raise NoSocketAvailableError("No socket available")
-        self._poll = select.poll()
-        self._sock_fd = self.sock.fileno()
-        self._auto_reconnect = False if kwargs.get('socket') else kwargs.get('auto_reconnect', False)
-        self._data_queue = Queue(maxsize=1)
-        self._data_wanted = Event()
-        self._reader_exit = Event()
-        self._reader_thr = Thread(target=self._data_receiver, daemon=True)
-        self._reader_thr.start()
+        self.sock: socket.socket = None  # noqa
+        self._poll: select.poll = None  # noqa
+        self._sock_fd: int = None  # noqa
+        self._auto_reconnect = False
+        self._data_queue: Queue = None  # noqa
+        self._data_wanted: Event = None  # noqa
+        self._reader_exit: Event = None  # noqa
+        self._reader_thr: Thread = None  # noqa
+        self._socket_setup(kwargs.get('socket'))
 
     def _v5_frame_def(self):
         """Define and construct V5 request frame structure."""
@@ -272,6 +272,8 @@ class PySolarmanV5:
         #v5_response = self.sock.recv(1024)
         try:
             v5_response = self._data_queue.get(timeout=self.socket_timeout)
+            if v5_response == b'':
+                raise NoSocketAvailableError('Connection closed on read')
             self._data_wanted.clear()
         except TimeoutError:
             raise
@@ -292,7 +294,10 @@ class PySolarmanV5:
                 if data == b'':
                     self.log.debug(f'[POLL] Socket closed. Reader thread exiting.')
                     if self._data_wanted.is_set():
-                        self._data_queue.put_nowait(data)
+                        try:
+                            self._data_queue.put_nowait(data)
+                        except queue.Full:
+                            pass
                     self._reconnect()
                     return
                 elif data.startswith(b'\xa5\x01\x00\x10G'):
@@ -309,19 +314,19 @@ class PySolarmanV5:
         Reconnect to the data logger if needed
         """
         if self._reader_thr.is_alive():
-            self.sock.send(b'')
-            self.sock.close()
+            try:
+                self.sock.send(b'')
+                self.sock.close()
+            except OSError:
+                pass
             self._reader_exit.set()
-            self._reader_thr.join(.5)
-            if self._reader_thr.is_alive():
-                raise RuntimeError('Reader thread is still alive!')
-            self._reader_exit.clear()
         if self._auto_reconnect:
             self.log.debug(f'Auto-Reconnect enabled. Trying to establish a new connection')
             self._poll.unregister(self._sock_fd)
             self.sock = self._create_socket()
             if self.sock:
                 self._sock_fd = self.sock.fileno()
+                self._reader_exit.clear()
                 self._reader_thr = Thread(target=self._data_receiver, daemon=True)
                 self._reader_thr.start()
                 self.log.debug(f'Auto-Reconnect successful.')
@@ -334,12 +339,15 @@ class PySolarmanV5:
         """
         Disconnect the socket and set a signal for the reader thread to exit
         """
-        self.sock.send(b'')
-        self.sock.close()
+        self._data_wanted.clear()
+        try:
+            self.sock.send(b'')
+            self.sock.close()
+        except OSError:
+            pass
         self._reader_exit.set()
         self._reader_thr.join(.5)
         self._poll.unregister(self._sock_fd)
-
     def _send_receive_modbus_frame(self, mb_request_frame):
         """Encodes mb_frame, sends/receives v5_frame, decodes response
 
@@ -376,6 +384,21 @@ class PySolarmanV5:
         except OSError:
             return None
         return sock
+
+    def _socket_setup(self, sock: Any):
+        if isinstance(sock, socket.socket) or sock is None:
+            self.sock = sock if sock else self._create_socket()
+            if self.sock is None:
+                raise NoSocketAvailableError("No socket available")
+            self._poll = select.poll()
+            self._sock_fd = self.sock.fileno()
+            self._auto_reconnect = False if sock else True
+            self._data_queue = Queue(maxsize=1)
+            self._data_wanted = Event()
+            self._reader_exit = Event()
+            self._reader_thr = Thread(target=self._data_receiver, daemon=True)
+            self._reader_thr.start()
+            self.log.debug(f'Socket setup completed... {self.sock}')
 
     @staticmethod
     def twos_complement(val, num_bits):

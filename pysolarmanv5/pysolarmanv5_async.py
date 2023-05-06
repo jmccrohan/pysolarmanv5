@@ -2,6 +2,7 @@
 import asyncio
 from umodbus.client.serial import rtu
 from multiprocessing import Event
+from typing import Any
 from .pysolarmanv5 import NoSocketAvailableError, PySolarmanV5
 
 
@@ -45,7 +46,6 @@ class PySolarmanV5Async(PySolarmanV5):
 
     def __init__(self, address, serial, **kwargs):
         """Constructor"""
-        kwargs.update({'socket': ''})
         super(PySolarmanV5Async, self).__init__(address, serial, **kwargs)
         self._needs_reconnect = kwargs.get("auto_reconnect", False)
         """ Auto-reconnect feature """
@@ -86,6 +86,16 @@ class PySolarmanV5Async(PySolarmanV5):
             self.log.debug(f'[{self.serial}] Successful reconnect')
         except:
             raise NoSocketAvailableError(f'Cannot open connection to {self.address}')
+
+    async def disconnect(self) -> None:
+        self.reader_task.cancel()
+        self.writer.write(b'')
+        await self.writer.drain()
+        self.writer.close()
+
+    def _socket_setup(self, sock: Any):
+        pass
+
 
     def _send_data(self, data: bytes):
         """
