@@ -58,8 +58,10 @@ class PySolarmanV5:
     :raises NoSocketAvailableError: If no network socket is available
 
     .. versionadded:: v2.5.0
-    :param auto_reconnect: Activates the auto-reconnect functionality. PySolarmanV5 will try to
-        keep the connection open. The default is False. Not compatible with custom sockets.
+
+    :param auto_reconnect: Activates the auto-reconnect functionality.
+        PySolarmanV5 will try to keep the connection open. The default is False.
+        Not compatible with custom sockets.
     :type auto_reconnect: Boolean, optional
 
     .. deprecated:: v2.4.0
@@ -109,7 +111,7 @@ class PySolarmanV5:
         self._data_wanted: Event = None  # noqa
         self._reader_exit: Event = None  # noqa
         self._reader_thr: Thread = None  # noqa
-        self._socket_setup(kwargs.get('socket'))
+        self._socket_setup(kwargs.get("socket"))
 
     def _v5_frame_def(self):
         """Define and construct V5 request frame structure."""
@@ -266,14 +268,13 @@ class PySolarmanV5:
         """
         self.log.debug("SENT: " + data_logging_stick_frame.hex(" "))
         if not self._reader_thr.is_alive():
-            raise NoSocketAvailableError('Connection already closed.')
+            raise NoSocketAvailableError("Connection already closed.")
         self.sock.sendall(data_logging_stick_frame)
         self._data_wanted.set()
-        #v5_response = self.sock.recv(1024)
         try:
             v5_response = self._data_queue.get(timeout=self.socket_timeout)
-            if v5_response == b'':
-                raise NoSocketAvailableError('Connection closed on read')
+            if v5_response == b"":
+                raise NoSocketAvailableError("Connection closed on read")
             self._data_wanted.clear()
         except TimeoutError:
             raise
@@ -291,8 +292,8 @@ class PySolarmanV5:
                 # We are registered only for inbound data on a single socket,
                 # so there is no need to check the (fileno, mask) tuples
                 data = self.sock.recv(1024)
-                if data == b'':
-                    self.log.debug(f'[POLL] Socket closed. Reader thread exiting.')
+                if data == b"":
+                    self.log.debug(f"[POLL] Socket closed. Reader thread exiting.")
                     if self._data_wanted.is_set():
                         try:
                             self._data_queue.put_nowait(data)
@@ -300,14 +301,14 @@ class PySolarmanV5:
                             pass
                     self._reconnect()
                     return
-                elif data.startswith(b'\xa5\x01\x00\x10G'):
+                elif data.startswith(b"\xa5\x01\x00\x10G"):
                     # Frame with control code 0x4710 - Counter frame
                     self.log.debug(f'[{self.serial}] COUNTER: {data.hex(" ")}')
                     continue
                 if self._data_wanted.is_set():
                     self._data_queue.put(data, timeout=self.socket_timeout)
                 else:
-                    self.log.debug("[POLL-DISCARDED] RECD: " + data.hex(' '))
+                    self.log.debug("[POLL-DISCARDED] RECD: " + data.hex(" "))
 
     def _reconnect(self):
         """
@@ -315,13 +316,15 @@ class PySolarmanV5:
         """
         if self._reader_thr.is_alive():
             try:
-                self.sock.send(b'')
+                self.sock.send(b"")
                 self.sock.close()
             except OSError:
                 pass
             self._reader_exit.set()
         if self._auto_reconnect:
-            self.log.debug(f'Auto-Reconnect enabled. Trying to establish a new connection')
+            self.log.debug(
+                f"Auto-Reconnect enabled. Trying to establish a new connection"
+            )
             self._poll.unregister(self._sock_fd)
             self.sock = self._create_socket()
             if self.sock:
@@ -329,25 +332,29 @@ class PySolarmanV5:
                 self._reader_exit.clear()
                 self._reader_thr = Thread(target=self._data_receiver, daemon=True)
                 self._reader_thr.start()
-                self.log.debug(f'Auto-Reconnect successful.')
+                self.log.debug(f"Auto-Reconnect successful.")
             else:
-                self.log.debug(f'No socket available! Reconnect failed.')
+                self.log.debug(f"No socket available! Reconnect failed.")
         else:
-            self.log.debug('Auto-Reconnect inactive.')
+            self.log.debug("Auto-Reconnect inactive.")
 
     def disconnect(self) -> None:
         """
         Disconnect the socket and set a signal for the reader thread to exit
+
+        :return: None
+
         """
         self._data_wanted.clear()
         try:
-            self.sock.send(b'')
+            self.sock.send(b"")
             self.sock.close()
         except OSError:
             pass
         self._reader_exit.set()
-        self._reader_thr.join(.5)
+        self._reader_thr.join(0.5)
         self._poll.unregister(self._sock_fd)
+
     def _send_receive_modbus_frame(self, mb_request_frame):
         """Encodes mb_frame, sends/receives v5_frame, decodes response
 
@@ -386,6 +393,7 @@ class PySolarmanV5:
         return sock
 
     def _socket_setup(self, sock: Any):
+        """Socket setup method"""
         if isinstance(sock, socket.socket) or sock is None:
             self.sock = sock if sock else self._create_socket()
             if self.sock is None:
@@ -398,7 +406,7 @@ class PySolarmanV5:
             self._reader_exit = Event()
             self._reader_thr = Thread(target=self._data_receiver, daemon=True)
             self._reader_thr.start()
-            self.log.debug(f'Socket setup completed... {self.sock}')
+            self.log.debug(f"Socket setup completed... {self.sock}")
 
     @staticmethod
     def twos_complement(val, num_bits):

@@ -5,4 +5,9 @@ from pysolarmanv5.pysolarmanv5 import NoSocketAvailableError
 
 name = "pysolarmanv5"
 
-__all__ = ["PySolarmanV5", "PySolarmanV5Async", "V5FrameError", "NoSocketAvailableError"]
+__all__ = [
+    "PySolarmanV5",
+    "PySolarmanV5Async",
+    "V5FrameError",
+    "NoSocketAvailableError",
+]

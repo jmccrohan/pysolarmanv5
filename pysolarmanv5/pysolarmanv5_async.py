@@ -26,7 +26,7 @@ class PySolarmanV5Async(PySolarmanV5):
     :param v5_error_correction: Enable naive error correction for V5 frames,
         defaults to False
     :type v5_error_correction: bool, optional
-    :param auto_reconnect: Auto reconnect to the data logging stick
+    :param auto_reconnect: Auto reconnect to the data logging stick on error
     :type auto_reconnect: bool, optional
 
     Basic example:
@@ -61,17 +61,20 @@ class PySolarmanV5Async(PySolarmanV5):
 
         :return: None
         :raises NoSocketAvailableError: When connection cannot be established
+
         """
         loop = asyncio.get_running_loop()
         try:
-            self.reader, self.writer = await asyncio.open_connection(self.address, self.port)
-            self.reader_task = loop.create_task(self._conn_keeper(), name='ConnKeeper')
+            self.reader, self.writer = await asyncio.open_connection(
+                self.address, self.port
+            )
+            self.reader_task = loop.create_task(self._conn_keeper(), name="ConnKeeper")
         except:
-            raise NoSocketAvailableError(f'Cannot open connection to {self.address}')
+            raise NoSocketAvailableError(f"Cannot open connection to {self.address}")
 
     async def reconnect(self) -> None:
         """
-        Reconnect to the data logging stick. It's called automatically if the auto-reconnect option is enabled
+        Reconnect to the data logging stick. Called automatically if the auto-reconnect option is enabled
 
         :return: None
         :raises NoSocketAvailableError: When connection cannot be re-established
@@ -80,22 +83,35 @@ class PySolarmanV5Async(PySolarmanV5):
         try:
             if self.reader_task:
                 self.reader_task.cancel()
-            self.reader, self.writer = await asyncio.open_connection(self.address, self.port)
+            self.reader, self.writer = await asyncio.open_connection(
+                self.address, self.port
+            )
             loop = asyncio.get_running_loop()
-            self.reader_task = loop.create_task(self._conn_keeper(), name='ConnKeeper')
-            self.log.debug(f'[{self.serial}] Successful reconnect')
+            self.reader_task = loop.create_task(self._conn_keeper(), name="ConnKeeper")
+            self.log.debug(f"[{self.serial}] Successful reconnect")
         except:
-            raise NoSocketAvailableError(f'Cannot open connection to {self.address}')
+            raise NoSocketAvailableError(f"Cannot open connection to {self.address}")
 
     async def disconnect(self) -> None:
+        """
+        Disconnect the socket and set a signal for the reader thread to exit
+
+        :return: None
+
+        """
         self.reader_task.cancel()
-        self.writer.write(b'')
+        self.writer.write(b"")
         await self.writer.drain()
         self.writer.close()
 
     def _socket_setup(self, sock: Any):
-        pass
+        """Socket setup method
 
+        PySolarmanV5Async handles socket creation separately to base
+        PySolarmanV5 class
+
+        """
+        pass
 
     def _send_data(self, data: bytes):
         """
@@ -103,6 +119,7 @@ class PySolarmanV5Async(PySolarmanV5):
 
         :param data:
         :return:
+
         """
         if self.data_wanted_ev.is_set():
             if not self.data_queue.empty():
@@ -115,29 +132,36 @@ class PySolarmanV5Async(PySolarmanV5):
         Socket reader loop with extra logic when auto-reconnect is enabled
 
         :return: None
+
         """
         while True:
             try:
                 data = await self.reader.read(1024)
             except ConnectionResetError:
-                self.log.debug(f'[{self.serial}] Connection reset. Closing the socket reader.')
+                self.log.debug(
+                    f"[{self.serial}] Connection reset. Closing the socket reader."
+                )
                 break
-            if data == b'':
-                self.log.debug(f'[{self.serial}] Connection closed by the remote. Closing the socket reader.')
+            if data == b"":
+                self.log.debug(
+                    f"[{self.serial}] Connection closed by the remote. Closing the socket reader."
+                )
                 break
-            elif data.startswith(b'\xa5\x01\x00\x10G'):
+            elif data.startswith(b"\xa5\x01\x00\x10G"):
                 # Frame with control code 0x4710 - Counter frame
                 self.log.debug(f'[{self.serial}] COUNTER: {data.hex(" ")}')
                 continue
             elif self.data_wanted_ev.is_set():
                 self._send_data(data)
             else:
-                self.log.debug('Data received but nobody waits for it... Discarded')
+                self.log.debug("Data received but nobody waits for it... Discarded")
         self.reader = None
         self.writer = None
-        self._send_data(b'')
+        self._send_data(b"")
         if self._needs_reconnect:
-            self.log.debug(f'[{self.serial}] Auto reconnect enabled. Will try to restart the socket reader')
+            self.log.debug(
+                f"[{self.serial}] Auto reconnect enabled. Will try to restart the socket reader"
+            )
             loop = asyncio.get_running_loop()
             loop.create_task(self.reconnect())
 
@@ -159,14 +183,16 @@ class PySolarmanV5Async(PySolarmanV5):
             self.writer.write(data_logging_stick_frame)
             await self.writer.drain()
             v5_response = await self.data_queue.get()
-            if v5_response == b'':
-                raise NoSocketAvailableError('Connection closed on read. Retry if auto-reconnect is enabled')
+            if v5_response == b"":
+                raise NoSocketAvailableError(
+                    "Connection closed on read. Retry if auto-reconnect is enabled"
+                )
         except AttributeError:
-            raise NoSocketAvailableError('Connection already closed')
+            raise NoSocketAvailableError("Connection already closed")
         except NoSocketAvailableError:
-            raise 
+            raise
         except Exception as exc:
-            self.log.exception(f'[{self.serial}] Send/Receive error: {exc}')
+            self.log.exception(f"[{self.serial}] Send/Receive error: {exc}")
             raise
         finally:
             self.data_wanted_ev.clear()
@@ -415,7 +441,9 @@ class PySolarmanV5Async(PySolarmanV5):
             masked_value = current_value
             masked_value |= or_mask
             masked_value &= and_mask
-            updated_value = await self.write_holding_register(register_addr, masked_value)
+            updated_value = await self.write_holding_register(
+                register_addr, masked_value
+            )
             return updated_value
         return current_value
 
