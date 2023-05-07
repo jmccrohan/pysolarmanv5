@@ -20,6 +20,7 @@ dependencies = [
 dev = [
     "black",
     "pylint",
+    "pytest",
 ]
 
 [project.urls]
