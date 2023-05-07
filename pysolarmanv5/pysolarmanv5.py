@@ -7,9 +7,9 @@ import select
 from threading import Thread, Event
 from multiprocessing import Queue
 from typing import Any
+from random import randrange
 
 from umodbus.client.serial import rtu
-from random import randrange
 
 
 class V5FrameError(Exception):

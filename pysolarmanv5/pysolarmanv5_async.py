@@ -1,8 +1,8 @@
 """pysolarmanv5_async.py"""
 import asyncio
-from umodbus.client.serial import rtu
 from multiprocessing import Event
 from typing import Any
+from umodbus.client.serial import rtu
 from .pysolarmanv5 import NoSocketAvailableError, PySolarmanV5
 
 
@@ -46,7 +46,7 @@ class PySolarmanV5Async(PySolarmanV5):
 
     def __init__(self, address, serial, **kwargs):
         """Constructor"""
-        super(PySolarmanV5Async, self).__init__(address, serial, **kwargs)
+        super().__init__(address, serial, **kwargs)
         self._needs_reconnect = kwargs.get("auto_reconnect", False)
         """ Auto-reconnect feature """
         self.reader: asyncio.StreamReader = None  # noqa
