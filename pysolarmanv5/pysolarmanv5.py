@@ -111,7 +111,7 @@ class PySolarmanV5:
         self._data_wanted: Event = None  # noqa
         self._reader_exit: Event = None  # noqa
         self._reader_thr: Thread = None  # noqa
-        self._socket_setup(kwargs.get("socket"))
+        self._socket_setup(kwargs.get("socket"), kwargs.get("auto_reconnect", False))
 
     def _v5_frame_def(self):
         """Define and construct V5 request frame structure."""
@@ -392,7 +392,7 @@ class PySolarmanV5:
             return None
         return sock
 
-    def _socket_setup(self, sock: Any):
+    def _socket_setup(self, sock: Any, auto_reconnect: bool):
         """Socket setup method"""
         if isinstance(sock, socket.socket) or sock is None:
             self.sock = sock if sock else self._create_socket()
@@ -400,7 +400,7 @@ class PySolarmanV5:
                 raise NoSocketAvailableError("No socket available")
             self._poll = select.poll()
             self._sock_fd = self.sock.fileno()
-            self._auto_reconnect = False if sock else True
+            self._auto_reconnect = False if sock else auto_reconnect
             self._data_queue = Queue(maxsize=1)
             self._data_wanted = Event()
             self._reader_exit = Event()
