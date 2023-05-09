@@ -1,11 +1,11 @@
 # Changelog
 
-## [v2.5.0] - UNRELEASED
+## [v2.5.0] - 2023-05-10
 
 ### Added
 
 - async support (PySolarmanV5Aync) added by @githubDante in [GH PR#28](https://github.com/jmccrohan/pysolarmanv5/pull/28)
-- Introduce sequence number on going V5 request frames
+- Introduce sequence number on outgoing V5 request frames
   Enhance V5 frame validation to compare received checksum to expected value
   Many thanks to Michael Zanetti (@mzanetti) for [highlighting this](https://github.com/jmccrohan/pysolarmanv5/issues/17).
 - Added mock SolarmanV5 Server tests (thanks @githubDante)
