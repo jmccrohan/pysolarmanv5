@@ -53,7 +53,7 @@ class MockDatalogger(PySolarmanV5):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def _socket_setup(self, sock):
+    def _socket_setup(self, *args, **kwargs):
         pass
 
     def v5_frame_response_encoder(self, modbus_frame):

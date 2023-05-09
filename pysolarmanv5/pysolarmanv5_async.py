@@ -104,7 +104,7 @@ class PySolarmanV5Async(PySolarmanV5):
         await self.writer.drain()
         self.writer.close()
 
-    def _socket_setup(self, sock: Any):
+    def _socket_setup(self, *args, **kwargs):
         """Socket setup method
 
         PySolarmanV5Async handles socket creation separately to base
