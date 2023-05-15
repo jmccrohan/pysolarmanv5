@@ -14,7 +14,10 @@ import socketserver
 import asyncio
 import random
 import logging
+import platform
 
+
+_WIN_PLATFORM = True if platform.system() == 'Windows' else False
 socketserver.TCPServer.allow_reuse_address = True
 socketserver.TCPServer.allow_reuse_port = True
 log = logging.getLogger()
@@ -251,7 +254,7 @@ class AioSolarmanServer(metaclass=_Singleton):
             port=self.port,
             family=socket.AF_INET,
             reuse_address=True,
-            reuse_port=True,
+            reuse_port=False if _WIN_PLATFORM else True,
         )
 
     def sync_runner(self):
