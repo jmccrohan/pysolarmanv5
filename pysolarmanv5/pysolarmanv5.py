@@ -350,12 +350,12 @@ class PySolarmanV5:
 
         """
         self._data_wanted.clear()
+        self._reader_exit.set()
         try:
             self.sock.send(b"")
             self.sock.close()
         except OSError:
             pass
-        self._reader_exit.set()
         self._reader_thr.join(0.5)
         self._poll.unregister(self._sock_fd)
 
