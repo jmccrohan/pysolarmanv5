@@ -3,13 +3,17 @@ import queue
 import struct
 import socket
 import logging
-import select
+import selectors
+import platform
 from threading import Thread, Event
 from multiprocessing import Queue
 from typing import Any
 from random import randrange
 
 from umodbus.client.serial import rtu
+
+
+_WIN_PLATFORM = True if platform.system() == 'Windows' else False
 
 
 class V5FrameError(Exception):
@@ -104,7 +108,7 @@ class PySolarmanV5:
         self._v5_frame_def()
 
         self.sock: socket.socket = None  # noqa
-        self._poll: select.poll = None  # noqa
+        self._poll: selectors.BaseSelector = None  # noqa
         self._sock_fd: int = None  # noqa
         self._auto_reconnect = False
         self._data_queue: Queue = None  # noqa
@@ -283,9 +287,9 @@ class PySolarmanV5:
         return v5_response
 
     def _data_receiver(self):
-        self._poll.register(self.sock.fileno(), select.POLLIN)
+        self._poll.register(self.sock.fileno(), selectors.EVENT_READ)
         while True:
-            events = self._poll.poll(500)
+            events = self._poll.select(.500)
             if self._reader_exit.is_set():
                 return
             for event in events:
@@ -346,12 +350,12 @@ class PySolarmanV5:
 
         """
         self._data_wanted.clear()
+        self._reader_exit.set()
         try:
             self.sock.send(b"")
             self.sock.close()
         except OSError:
             pass
-        self._reader_exit.set()
         self._reader_thr.join(0.5)
         self._poll.unregister(self._sock_fd)
 
@@ -398,7 +402,10 @@ class PySolarmanV5:
             self.sock = sock if sock else self._create_socket()
             if self.sock is None:
                 raise NoSocketAvailableError("No socket available")
-            self._poll = select.poll()
+            if _WIN_PLATFORM:
+                self._poll = selectors.DefaultSelector()
+            else:
+                self._poll = selectors.PollSelector()
             self._sock_fd = self.sock.fileno()
             self._auto_reconnect = False if sock else auto_reconnect
             self._data_queue = Queue(maxsize=1)
