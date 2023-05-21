@@ -1,6 +1,28 @@
 # Changelog
 
-## [v2.5.0] - 2023-05-10
+## [v3.0.0] - 2023-05-21
+
+### Fixed
+
+- MAJOR VERSION BUMP - v3.0.0
+
+  v2.5.0 inadvertently introduced a breaking change and has been withdrawn.
+  
+  The breakage was introduced by [GH PR #33](https://github.com/jmccrohan/pysolarmanv5/pull/33) 
+  which moves the PySolarmanV5 socket communications to a worker thread. While 
+  this is a major improvement over the previous method, it requires that the
+  disconnect() method is called to close the socket. 
+
+  Prior to this, the socket was implicitly closed when the PySolarmanV5 object
+  was deferenced. Many dependent applications re-instantiate a new object for
+  each poll. These applications will need to either remain on v2.4.0, or
+  upgrade to v3.0.0 and ensure disconnect() is called to close the connection
+  cleanly.
+
+  Many thanks to @connesha for highlighting this breaking change in [GH issue #39](https://github.com/jmccrohan/pysolarmanv5/issues/39)
+- Restore Windows compatibility which was broken in v2.5.0 [GH PR#38](https://github.com/jmccrohan/pysolarmanv5/pull/38)
+
+## [v2.5.0] - 2023-05-10 [WITHDRAWN]
 
 ### Added
 
