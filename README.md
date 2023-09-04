@@ -48,6 +48,7 @@ To install the latest development version from git, run:
 
 ## Projects using pysolarmanv5
 
+- [StephanJoubert/home_assistant_solarman](https://github.com/StephanJoubert/home_assistant_solarman)
 - [NosIreland/solismon3](https://github.com/NosIreland/solismon3)
 - [NosIreland/solismod](https://github.com/NosIreland/solismod)
 - [jmccrohan/ha_pyscript_pysolarmanv5](https://github.com/jmccrohan/ha_pyscript_pysolarmanv5)
