@@ -99,7 +99,7 @@ class PySolarmanV5:
         self.mb_slave_id = kwargs.get("mb_slave_id", 1)
         self.verbose = kwargs.get("verbose", False)
         self.socket_timeout = kwargs.get("socket_timeout", 60)
-        self.v5_error_correction = kwargs.get("error_correction", False)
+        self.v5_error_correction = kwargs.get("v5_error_correction", False)
         self.sequence_number = None
 
         if self.verbose:
