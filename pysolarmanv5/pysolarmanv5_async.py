@@ -23,9 +23,6 @@ class PySolarmanV5Async(PySolarmanV5):
     :type port: int, optional
     :param mb_slave_id: Inverter Modbus slave ID, defaults to 1
     :type mb_slave_id: int, optional
-    :param v5_error_correction: Enable naive error correction for V5 frames,
-        defaults to False
-    :type v5_error_correction: bool, optional
     :param auto_reconnect: Auto reconnect to the data logging stick on error
     :type auto_reconnect: bool, optional
 
