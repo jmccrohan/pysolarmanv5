@@ -295,7 +295,11 @@ class PySolarmanV5:
             for event in events:
                 # We are registered only for inbound data on a single socket,
                 # so there is no need to check the (fileno, mask) tuples
-                data = self.sock.recv(1024)
+                try:
+                    data = self.sock.recv(1024)
+                except ConnectionResetError:
+                    self.log.debug(f'[{self.serial}] Connection RESET by peer.')
+                    data = b""
                 if data == b"":
                     self.log.debug(f"[POLL] Socket closed. Reader thread exiting.")
                     if self._data_wanted.is_set():
