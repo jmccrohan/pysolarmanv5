@@ -283,8 +283,6 @@ class PySolarmanV5:
                 continue
 
             if v5_frame[frame_len_without_payload_len + payload_len - 2] != self._calculate_v5_frame_checksum(v5_frame, frame_len_without_payload_len + payload_len):
-                self.log.debug("_v5_frame_decoder: V5 contains invalid V5 checksumd %s / %d", v5_frame[frame_len_without_payload_len + payload_len - 2], self._calculate_v5_frame_checksum(v5_frame, frame_len_without_payload_len + payload_len))
-                self.log.debug("_v5_frame_decoder: V5 contains invalid V5 checksumd %s / %d", v5_frame[(frame_len_without_payload_len + payload_len - 3):(frame_len_without_payload_len + payload_len - 1)].hex(" "), self._calculate_v5_frame_checksum(v5_frame, frame_len_without_payload_len + payload_len))
                 self.log.debug("_v5_frame_decoder: V5 frame contains invalid V5 checksumd")
                 v5_frame.pop()
                 continue
