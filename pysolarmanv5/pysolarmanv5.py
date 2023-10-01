@@ -5,6 +5,7 @@ import socket
 import logging
 import selectors
 import platform
+import time
 from threading import Thread, Event
 from multiprocessing import Queue
 from typing import Any
@@ -131,9 +132,10 @@ class PySolarmanV5:
         self.v5_offsettime = bytes.fromhex("00000000")
         self.v5_checksum = bytes.fromhex("00")  # placeholder value
         self.v5_end = bytes.fromhex("15")
+        self.v5_header_len = 12 # v5_start(1) + v5_length(2) + v5_controlcode(2) + v5_serial(2) + v5_loggerserial(4) + v5_frametype(1)
 
     @staticmethod
-    def _calculate_v5_frame_checksum(frame):
+    def _calculate_v5_frame_checksum(frame, length):
         """Calculate checksum on all frame bytes except head, end and checksum
 
         :param frame: V5 frame
@@ -143,7 +145,7 @@ class PySolarmanV5:
 
         """
         checksum = 0
-        for i in range(1, len(frame) - 2, 1):
+        for i in range(1, length - 2, 1):
             checksum += frame[i] & 0xFF
         return int(checksum & 0xFF)
 
@@ -196,13 +198,15 @@ class PySolarmanV5:
 
         v5_frame = v5_header + v5_payload + v5_trailer
 
-        v5_frame[len(v5_frame) - 2] = self._calculate_v5_frame_checksum(v5_frame)
+        v5_frame[len(v5_frame) - 2] = self._calculate_v5_frame_checksum(v5_frame, len(v5_frame))
         return v5_frame
 
     def _v5_frame_decoder(self, v5_frame):
         """Decodes a V5 data logging stick frame and returns a modbus RTU frame
 
-        Modbus RTU frame will start at position 25 through ``len(v5_frame)-2``.
+        Search for a valid RTU frame within receive buffer as answers to other request als might be
+        inside the buffer. Could happen if in parallel ATx commands beeing issued.
+        Modbus RTU frame will start at position 25 from an found v5_start.
 
         Occasionally logger can send a spurious 'keep-alive' reply with a
         control code of ``0x4710``. These messages can either take the place of,
@@ -226,43 +230,78 @@ class PySolarmanV5:
         :type v5_frame: bytes
         :return: Modbus RTU Frame
         :rtype: bytes
-        :raises V5FrameError: If parsing fails due to invalid V5 frame
+        :raises nothing (silent parsing the v5_frame)
 
         """
-        frame_len = len(v5_frame)
-        (payload_len,) = struct.unpack("<H", v5_frame[1:3])
-
+       
+        modbus_frame = b""
         frame_len_without_payload_len = 13
+        v5_start = int.from_bytes(self.v5_start, byteorder="big")
 
-        if frame_len != (frame_len_without_payload_len + payload_len):
-            self.log.debug("frame_len does not match payload_len.")
-            if self.v5_error_correction:
-                frame_len = frame_len_without_payload_len + payload_len
+        self.log.debug("_v5_frame_decoder: Check frame buffer len: %i", len(v5_frame))
+        while True:
+            frame_len = len(v5_frame)
+            while (frame_len > 0 and v5_frame[0] != v5_start):
+                v5_frame.pop()
+                frame_len -= 1
 
-        if (v5_frame[0] != int.from_bytes(self.v5_start, byteorder="big")) or (
-            v5_frame[frame_len - 1] != int.from_bytes(self.v5_end, byteorder="big")
-        ):
-            raise V5FrameError("V5 frame contains invalid start or end values")
-        if v5_frame[frame_len - 2] != self._calculate_v5_frame_checksum(v5_frame):
-            raise V5FrameError("V5 frame contains invalid V5 checksum")
-        if v5_frame[5] != self.sequence_number:
-            raise V5FrameError("V5 frame contains invalid sequence number")
-        if v5_frame[7:11] != self.v5_loggerserial:
-            raise V5FrameError("V5 frame contains incorrect data logger serial number")
-        if v5_frame[3:5] != struct.pack("<H", 0x1510):
-            raise V5FrameError("V5 frame contains incorrect control code")
-        if v5_frame[11] != int("02", 16):
-            raise V5FrameError("V5 frame contains invalid frametype")
+            if (frame_len < self.v5_header_len):
+                self.log.debug("_v5_frame_decoder: V5 frame not valid/complete")
+                return b"" #need to wait for more bytes to be received
+            
+            self.log.debug("_v5_frame_decoder: V5 frame      : " + str(v5_frame))
+            self.log.debug("_v5_frame_decoder: V5 frame (hex): " + v5_frame.hex(" "))
+        
+            if v5_frame[5] != self.sequence_number:
+                self.log.debug("_v5_frame_decoder: V5 frame contains invalid sequence number %s", v5_frame[5:6])
+                v5_frame.pop()
+                continue
 
-        modbus_frame = v5_frame[25 : frame_len - 2]
+            if v5_frame[7:11] != self.v5_loggerserial:
+                self.log.debug("_v5_frame_decoder: V5 frame contains incorrect data logger serial number")
+                v5_frame.pop()
+                continue
 
-        if len(modbus_frame) < 5:
-            raise V5FrameError("V5 frame does not contain a valid Modbus RTU frame")
+            if v5_frame[3:5] != struct.pack("<H", 0x1510):
+                self.log.debug("_v5_frame_decoder: V5 frame contains incorrect control code")
+                v5_frame.pop()
+                continue
+                
+            if v5_frame[11] != int("02", 16):
+                self.log.debug("_v5_frame_decoder: V5 frame contains invalid frametype")
+                v5_frame.pop()
+                continue
+
+            (payload_len,) = struct.unpack("<H", v5_frame[1:3])
+            if frame_len < (frame_len_without_payload_len + payload_len + 3):
+                self.log.debug("_v5_frame_decoder: V5 frame not complete.")
+                return b"" #need to wait for more bytes to be received
+            
+            if (v5_frame[frame_len_without_payload_len + payload_len - 1] != int.from_bytes(self.v5_end, byteorder="big")):
+                self.log.debug("_v5_frame_decoder: V5 frame contains invalid end value")
+                v5_frame.pop()
+                continue
+
+            if v5_frame[frame_len_without_payload_len + payload_len - 2] != self._calculate_v5_frame_checksum(v5_frame, frame_len_without_payload_len + payload_len):
+                self.log.debug("_v5_frame_decoder: V5 contains invalid V5 checksumd %s / %d", v5_frame[frame_len_without_payload_len + payload_len - 2], self._calculate_v5_frame_checksum(v5_frame, frame_len_without_payload_len + payload_len))
+                self.log.debug("_v5_frame_decoder: V5 contains invalid V5 checksumd %s / %d", v5_frame[(frame_len_without_payload_len + payload_len - 3):(frame_len_without_payload_len + payload_len - 1)].hex(" "), self._calculate_v5_frame_checksum(v5_frame, frame_len_without_payload_len + payload_len))
+                self.log.debug("_v5_frame_decoder: V5 frame contains invalid V5 checksumd")
+                v5_frame.pop()
+                continue
+
+            if ((payload_len - frame_len_without_payload_len) <= 5):
+                self.log.debug("_v5_frame_decoder: V5 frame no RTU frame (too short)")
+                v5_frame.pop()
+                continue
+
+            modbus_frame = v5_frame[25 : frame_len_without_payload_len + payload_len - 2]
+            self.log.debug("_v5_frame_decoder: V5 frame found:" + modbus_frame.hex(" "))
+            break
 
         return modbus_frame
 
-    def _send_receive_v5_frame(self, data_logging_stick_frame):
-        """Send v5 frame to the data logger and receive response
+    def _send_receive_v5_frame_payload(self, data_logging_stick_frame):
+        """Send v5 frame to the data logger and receive response payload
 
         :param data_logging_stick_frame: V5 frame to transmit
         :type data_logging_stick_frame: bytes
@@ -274,17 +313,27 @@ class PySolarmanV5:
         if not self._reader_thr.is_alive():
             raise NoSocketAvailableError("Connection already closed.")
         self.sock.sendall(data_logging_stick_frame)
+        deadline = time.monotonic() + self.socket_timeout
         self._data_wanted.set()
         try:
-            v5_response = self._data_queue.get(timeout=self.socket_timeout)
-            if v5_response == b"":
-                raise NoSocketAvailableError("Connection closed on read")
+            v5_response = bytearray()
+            while True:
+                v5_response_actual = self._data_queue.get(timeout=self.socket_timeout)
+                if v5_response_actual == b"":
+                    raise NoSocketAvailableError("Connection closed on read")
+                v5_response.extend(v5_response_actual)
+                v5_frame = self._v5_frame_decoder(v5_response)
+                if (v5_frame != b""):
+                  break
+                if ((deadline - time.monotonic()) <= 0):
+                  raise TimeoutError
+
             self._data_wanted.clear()
         except TimeoutError:
             raise
 
-        self.log.debug("RECD: " + v5_response.hex(" "))
-        return v5_response
+        self.log.debug("RECD: " + v5_frame.hex(" "))
+        return v5_frame
 
     def _data_receiver(self):
         self._poll.register(self.sock.fileno(), selectors.EVENT_READ)
@@ -309,10 +358,7 @@ class PySolarmanV5:
                             pass
                     self._reconnect()
                     return
-                elif data.startswith(b"\xa5\x01\x00\x10G"):
-                    # Frame with control code 0x4710 - Counter frame
-                    self.log.debug(f'[{self.serial}] COUNTER: {data.hex(" ")}')
-                    continue
+                
                 if self._data_wanted.is_set():
                     self._data_queue.put(data, timeout=self.socket_timeout)
                 else:
@@ -373,8 +419,7 @@ class PySolarmanV5:
 
         """
         v5_request_frame = self._v5_frame_encoder(mb_request_frame)
-        v5_response_frame = self._send_receive_v5_frame(v5_request_frame)
-        mb_response_frame = self._v5_frame_decoder(v5_response_frame)
+        mb_response_frame = self._send_receive_v5_frame_payload(v5_request_frame)
         return mb_response_frame
 
     def _get_modbus_response(self, mb_request_frame):
