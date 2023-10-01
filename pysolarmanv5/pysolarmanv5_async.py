@@ -1,5 +1,6 @@
 """pysolarmanv5_async.py"""
 import asyncio
+import time
 from multiprocessing import Event
 from typing import Any
 from umodbus.client.serial import rtu
@@ -144,10 +145,6 @@ class PySolarmanV5Async(PySolarmanV5):
                     f"[{self.serial}] Connection closed by the remote. Closing the socket reader."
                 )
                 break
-            elif data.startswith(b"\xa5\x01\x00\x10G"):
-                # Frame with control code 0x4710 - Counter frame
-                self.log.debug(f'[{self.serial}] COUNTER: {data.hex(" ")}')
-                continue
             elif self.data_wanted_ev.is_set():
                 self._send_data(data)
             else:
@@ -162,8 +159,8 @@ class PySolarmanV5Async(PySolarmanV5):
             loop = asyncio.get_running_loop()
             loop.create_task(self.reconnect())
 
-    async def _send_receive_v5_frame(self, data_logging_stick_frame):
-        """Send v5 frame to the data logger and receive response
+    async def _send_receive_v5_frame_payload(self, data_logging_stick_frame):
+        """Send v5 frame to the data logger and receive response payload
 
         :param data_logging_stick_frame: V5 frame to transmit
         :type data_logging_stick_frame: bytes
@@ -179,11 +176,23 @@ class PySolarmanV5Async(PySolarmanV5):
         try:
             self.writer.write(data_logging_stick_frame)
             await self.writer.drain()
-            v5_response = await self.data_queue.get()
-            if v5_response == b"":
-                raise NoSocketAvailableError(
-                    "Connection closed on read. Retry if auto-reconnect is enabled"
-                )
+            v5_response = bytearray()
+            deadline = time.monotonic() + self.socket_timeout
+            while True:
+                v5_response_actual = await self.data_queue.get()
+                if v5_response_actual == b"":
+                    raise NoSocketAvailableError(
+                        "Connection closed on read. Retry if auto-reconnect is enabled"
+                    )
+                v5_response.extend(v5_response_actual)
+                v5_frame = self._v5_frame_decoder(v5_response)
+                if (v5_frame != b""):
+                  break
+                if ((deadline - time.monotonic()) <= 0):
+                  raise TimeoutError
+                #need more data
+                self.data_wanted_ev.set()
+
         except AttributeError:
             raise NoSocketAvailableError("Connection already closed")
         except NoSocketAvailableError:
@@ -194,8 +203,8 @@ class PySolarmanV5Async(PySolarmanV5):
         finally:
             self.data_wanted_ev.clear()
 
-        self.log.debug("RECD: " + v5_response.hex(" "))
-        return v5_response
+        self.log.debug("RECD: " + ("nothing" if v5_frame == b"" else v5_frame.hex(" ")))
+        return v5_frame
 
     async def _send_receive_modbus_frame(self, mb_request_frame):
         """Encodes mb_frame, sends/receives v5_frame, decodes response
@@ -207,8 +216,7 @@ class PySolarmanV5Async(PySolarmanV5):
 
         """
         v5_request_frame = self._v5_frame_encoder(mb_request_frame)
-        v5_response_frame = await self._send_receive_v5_frame(v5_request_frame)
-        mb_response_frame = self._v5_frame_decoder(v5_response_frame)
+        mb_response_frame = await self._send_receive_v5_frame_payload(v5_request_frame)
         return mb_response_frame
 
     async def _get_modbus_response(self, mb_request_frame):
