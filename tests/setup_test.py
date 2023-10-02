@@ -161,6 +161,8 @@ async def stream_handler(reader: asyncio.StreamReader, writer: asyncio.StreamWri
     """
     sol = MockDatalogger("0.0.0.0", 2612749371, auto_reconnect=False)
     count_packet = bytes.fromhex("a5010010478d69b5b50aa2006415")
+    non_v5_packet = bytes.fromhex("41542b595a434d505645523d4d57335f3136555f353430365f322e32370d0a0d0a")
+    gibberish = bytes.fromhex("aa030a00000000000000000000be9c")
     cl_packets = 0
 
     while True:
@@ -198,6 +200,12 @@ async def stream_handler(reader: asyncio.StreamReader, writer: asyncio.StreamWri
                 # Write counter packet and wait some time to be consumed
                 await random_delay()
                 writer.write(count_packet)
+                await writer.drain()
+                await random_delay()
+                writer.write(gibberish)
+                await writer.drain()
+                await random_delay()
+                writer.write(non_v5_packet)
                 await writer.drain()
                 await random_delay()
             if cl_packets == 2:
