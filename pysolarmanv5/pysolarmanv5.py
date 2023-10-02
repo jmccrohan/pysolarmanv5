@@ -313,6 +313,9 @@ class PySolarmanV5:
                     # Frame with control code 0x4710 - Counter frame
                     self.log.debug(f'[{self.serial}] COUNTER: {data.hex(" ")}')
                     continue
+                elif not data.startswith(b"\xa5"):
+                    self.log.debug(f'[{self.serial}] V5_MISMATCH: {data.hex(" ")}')
+                    continue
                 if self._data_wanted.is_set():
                     self._data_queue.put(data, timeout=self.socket_timeout)
                 else:
