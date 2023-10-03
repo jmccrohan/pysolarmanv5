@@ -316,6 +316,9 @@ class PySolarmanV5:
                 elif not data.startswith(b"\xa5"):
                     self.log.debug(f'[{self.serial}] V5_MISMATCH: {data.hex(" ")}')
                     continue
+                elif data[5] != self.sequence_number:
+                    self.log.debug(f'[{self.serial}] V5_SEQ_NO_MISMATCH: {data.hex(" ")}')
+                    continue
                 if self._data_wanted.is_set():
                     self._data_queue.put(data, timeout=self.socket_timeout)
                 else:

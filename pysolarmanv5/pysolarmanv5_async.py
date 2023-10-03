@@ -151,6 +151,9 @@ class PySolarmanV5Async(PySolarmanV5):
             elif not data.startswith(b"\xa5"):
                 self.log.debug(f'[{self.serial}] V5_MISMATCH: {data.hex(" ")}')
                 continue
+            elif data[5] != self.sequence_number:
+                self.log.debug(f'[{self.serial}] V5_SEQ_NO_MISMATCH: {data.hex(" ")}')
+                continue
             elif self.data_wanted_ev.is_set():
                 self._send_data(data)
             else:
