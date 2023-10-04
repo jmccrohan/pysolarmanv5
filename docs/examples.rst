@@ -4,7 +4,7 @@ Examples
 
 
 Basic (sync) Client Example
-^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. literalinclude:: ../examples/client_example.py
    :linenos:
