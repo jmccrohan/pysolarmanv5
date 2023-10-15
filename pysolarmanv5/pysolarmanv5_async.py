@@ -453,7 +453,7 @@ class PySolarmanV5Async(PySolarmanV5):
     async def send_raw_modbus_frame(self, mb_request_frame):
         """Send raw modbus frame and return modbus response frame
 
-        Wrapper around internal method :func:`_send_receive_modbus_frame()
+        Wrapper around internal method :func:`_send_receive_modbus_frame() <pysolarmanv5.PySolarmanV5Async._send_receive_modbus_frame>`
 
         :param mb_request_frame: Modbus frame
         :type mb_request_frame: bytearray
@@ -466,7 +466,7 @@ class PySolarmanV5Async(PySolarmanV5):
     async def send_raw_modbus_frame_parsed(self, mb_request_frame):
         """Send raw modbus frame and return parsed modbus response list
 
-        Wrapper around internal method :func:`_get_modbus_response()
+        Wrapper around internal method :func:`_get_modbus_response() <pysolarmanv5.PySolarmanV5Async._get_modbus_response>`
 
         :param mb_request_frame: Modbus frame
         :type mb_request_frame: bytearray
