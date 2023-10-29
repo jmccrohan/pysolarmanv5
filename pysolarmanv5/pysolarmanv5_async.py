@@ -86,6 +86,12 @@ class PySolarmanV5Async(PySolarmanV5):
             loop = asyncio.get_running_loop()
             self.reader_task = loop.create_task(self._conn_keeper(), name="ConnKeeper")
             self.log.debug(f"[{self.serial}] Successful reconnect")
+            if self.data_wanted_ev.is_set():
+                self.log.debug(
+                    f"[{self.serial}] Data expected. Will retry the last request"
+                )
+                self.writer.write(self._last_frame)
+                await self.writer.drain()
         except:
             raise NoSocketAvailableError(f"Cannot open connection to {self.address}")
 
@@ -160,7 +166,7 @@ class PySolarmanV5Async(PySolarmanV5):
                 self.log.debug("Data received but nobody waits for it... Discarded")
         self.reader = None
         self.writer = None
-        self._send_data(b"")
+        # self._send_data(b"")
         if self._needs_reconnect:
             self.log.debug(
                 f"[{self.serial}] Auto reconnect enabled. Will try to restart the socket reader"
@@ -182,10 +188,13 @@ class PySolarmanV5Async(PySolarmanV5):
 
         self.log.debug("SENT: " + data_logging_stick_frame.hex(" "))
         self.data_wanted_ev.set()
+        self._last_frame = data_logging_stick_frame
         try:
             self.writer.write(data_logging_stick_frame)
             await self.writer.drain()
-            v5_response = await self.data_queue.get()
+            v5_response = await asyncio.wait_for(
+                self.data_queue.get(), self.socket_timeout
+            )
             if v5_response == b"":
                 raise NoSocketAvailableError(
                     "Connection closed on read. Retry if auto-reconnect is enabled"
