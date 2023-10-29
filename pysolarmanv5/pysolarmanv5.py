@@ -13,7 +13,7 @@ from random import randrange
 from umodbus.client.serial import rtu
 
 
-_WIN_PLATFORM = True if platform.system() == 'Windows' else False
+_WIN_PLATFORM = True if platform.system() == "Windows" else False
 
 
 class V5FrameError(Exception):
@@ -115,6 +115,7 @@ class PySolarmanV5:
         self._data_wanted: Event = None  # noqa
         self._reader_exit: Event = None  # noqa
         self._reader_thr: Thread = None  # noqa
+        self._last_frame: bytes = b""
         self._socket_setup(kwargs.get("socket"), kwargs.get("auto_reconnect", False))
 
     def _v5_frame_def(self):
@@ -275,6 +276,7 @@ class PySolarmanV5:
             raise NoSocketAvailableError("Connection already closed.")
         self.sock.sendall(data_logging_stick_frame)
         self._data_wanted.set()
+        self._last_frame = data_logging_stick_frame
         try:
             v5_response = self._data_queue.get(timeout=self.socket_timeout)
             if v5_response == b"":
@@ -289,7 +291,7 @@ class PySolarmanV5:
     def _data_receiver(self):
         self._poll.register(self.sock.fileno(), selectors.EVENT_READ)
         while True:
-            events = self._poll.select(.500)
+            events = self._poll.select(0.500)
             if self._reader_exit.is_set():
                 return
             for event in events:
@@ -298,16 +300,25 @@ class PySolarmanV5:
                 try:
                     data = self.sock.recv(1024)
                 except ConnectionResetError:
-                    self.log.debug(f'[{self.serial}] Connection RESET by peer.')
+                    self.log.debug(f"[{self.serial}] Connection RESET by peer.")
                     data = b""
                 if data == b"":
                     self.log.debug(f"[POLL] Socket closed. Reader thread exiting.")
                     if self._data_wanted.is_set():
-                        try:
-                            self._data_queue.put_nowait(data)
-                        except queue.Full:
-                            pass
-                    self._reconnect()
+                        self._reconnect()
+                        if self.sock:
+                            self.log.debug(
+                                f"[POLL] Data expected. Will retry the last request"
+                            )
+                            self.sock.sendall(self._last_frame)
+                            return
+                        else:
+                            try:
+                                self._data_queue.put_nowait(data)
+                            except queue.Full:
+                                pass
+                    else:
+                        self._reconnect()
                     return
                 elif data.startswith(b"\xa5\x01\x00\x10G"):
                     # Frame with control code 0x4710 - Counter frame
@@ -317,7 +328,9 @@ class PySolarmanV5:
                     self.log.debug(f'[{self.serial}] V5_MISMATCH: {data.hex(" ")}')
                     continue
                 elif data[5] != self.sequence_number:
-                    self.log.debug(f'[{self.serial}] V5_SEQ_NO_MISMATCH: {data.hex(" ")}')
+                    self.log.debug(
+                        f'[{self.serial}] V5_SEQ_NO_MISMATCH: {data.hex(" ")}'
+                    )
                     continue
                 if self._data_wanted.is_set():
                     self._data_queue.put(data, timeout=self.socket_timeout)
@@ -349,8 +362,10 @@ class PySolarmanV5:
                 self.log.debug(f"Auto-Reconnect successful.")
             else:
                 self.log.debug(f"No socket available! Reconnect failed.")
+                self.sock = None
         else:
             self.log.debug("Auto-Reconnect inactive.")
+            self.sock = None
 
     def disconnect(self) -> None:
         """

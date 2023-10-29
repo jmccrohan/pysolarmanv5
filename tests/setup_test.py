@@ -17,7 +17,7 @@ import logging
 import platform
 
 
-_WIN_PLATFORM = True if platform.system() == 'Windows' else False
+_WIN_PLATFORM = True if platform.system() == "Windows" else False
 socketserver.TCPServer.allow_reuse_address = True
 socketserver.TCPServer.allow_reuse_port = True
 log = logging.getLogger()
@@ -52,7 +52,6 @@ def function_response_from_request(req: bytes):
 
 
 class MockDatalogger(PySolarmanV5):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -161,8 +160,11 @@ async def stream_handler(reader: asyncio.StreamReader, writer: asyncio.StreamWri
     """
     sol = MockDatalogger("0.0.0.0", 2612749371, auto_reconnect=False)
     count_packet = bytes.fromhex("a5010010478d69b5b50aa2006415")
-    non_v5_packet = bytes.fromhex("41542b595a434d505645523d4d57335f3136555f353430365f322e32370d0a0d0a")
+    non_v5_packet = bytes.fromhex(
+        "41542b595a434d505645523d4d57335f3136555f353430365f322e32370d0a0d0a"
+    )
     gibberish = bytes.fromhex("aa030a00000000000000000000be9c")
+    more_gibberish = bytes.fromhex("0103080100020232333038c75c")
     cl_packets = 0
 
     while True:
@@ -185,6 +187,15 @@ async def stream_handler(reader: asyncio.StreamReader, writer: asyncio.StreamWri
             data[-2:-1] = checksum.to_bytes(1, byteorder="big")
             data = bytes(data)
             log.debug(f"[AioHandler] DEC: {data}")
+            if cl_packets == 4:
+                log.debug("C == 4. Writing empty bytes... Expecting reconnect")
+                writer.write(b"")
+                try:
+                    await writer.drain()
+                    break
+                except:
+                    log.error("Connection closed......")
+                    break
             try:
                 decoded = sol._v5_frame_decoder(data)
                 enc = function_response_from_request(decoded)
@@ -196,7 +207,8 @@ async def stream_handler(reader: asyncio.StreamReader, writer: asyncio.StreamWri
             except Exception as e:
                 log.exception(e)
                 writer.write(data)
-            if cl_packets == 2:
+
+            if cl_packets == 3:
                 # Write counter packet and wait some time to be consumed
                 await random_delay()
                 writer.write(count_packet)
@@ -208,13 +220,9 @@ async def stream_handler(reader: asyncio.StreamReader, writer: asyncio.StreamWri
                 writer.write(non_v5_packet)
                 await writer.drain()
                 await random_delay()
-            if cl_packets == 2:
-                # Uncomment for auto-reconnect tests
-                # It is unstable, tests can fail from time to time if enabled
-                # writer.close()
-                break
-                # await random_delay()
-                pass
+                writer.write(more_gibberish)
+                await writer.drain()
+                await random_delay()
     try:
         writer.write(b"")
         await writer.drain()

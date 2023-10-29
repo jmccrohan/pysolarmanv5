@@ -25,9 +25,13 @@ def test_async():
         )  # wait for auto-reconnect if enabled (see SolarmanServer)
         try:
             res = await solarman.read_holding_registers(2000, 4)
+            res = await solarman.read_holding_registers(200, 4)
+            res = await solarman.read_holding_registers(20, 4)
         except NoSocketAvailableError:
             await asyncio.sleep(1)
             res = await solarman.read_holding_registers(2000, 4)
+            res = await solarman.read_holding_registers(200, 4)
+            res = await solarman.read_holding_registers(20, 4)
         assert len(res) == 4
         await solarman.disconnect()
         log.debug("Async disconnected!!!")

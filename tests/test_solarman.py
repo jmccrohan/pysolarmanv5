@@ -22,9 +22,13 @@ def test_sync():
     time.sleep(1)  # wait for auto-reconnect if enabled (see SolarmanServer)
     try:
         res = solarman.read_input_registers(40, 10)
+        res = solarman.read_input_registers(50, 10)
+        res = solarman.read_input_registers(60, 10)
     except NoSocketAvailableError:
         time.sleep(1)
         res = solarman.read_input_registers(40, 10)
+        res = solarman.read_input_registers(50, 10)
+        res = solarman.read_input_registers(60, 10)
     log.debug(f"[Sync-INPUT] Logger response: {res}")
     assert len(res) == 10
     solarman.disconnect()
