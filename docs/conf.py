@@ -33,6 +33,8 @@ autodoc_default_options = {
 
 autodoc_mock_imports = ["umodbus"]
 
+autosectionlabel_prefix_document = True
+
 packetdiag_html_image_format = 'SVG'
 
 #todo_include_todos = True

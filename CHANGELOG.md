@@ -1,5 +1,12 @@
 # Changelog
 
+## [v3.0.1] - 2023-10-04
+
+### Fixed
+
+- Handle connection resets in sync library (already handled by async library).
+  Thanks to @jlopez77 and @githubDante. See [GH issue #44](https://github.com/jmccrohan/pysolarmanv5/issues/44)
+
 ## [v3.0.0] - 2023-05-21
 
 ### Fixed
