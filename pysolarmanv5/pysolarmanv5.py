@@ -1,4 +1,5 @@
 """pysolarmanv5.py"""
+
 import queue
 import struct
 import socket
@@ -14,7 +15,6 @@ from umodbus.client.serial import rtu
 
 
 _WIN_PLATFORM = True if platform.system() == "Windows" else False
-
 
 class V5FrameError(Exception):
     """V5 Frame Validation Error"""
@@ -277,12 +277,14 @@ class PySolarmanV5:
         self.sock.sendall(data_logging_stick_frame)
         self._data_wanted.set()
         self._last_frame = data_logging_stick_frame
+        v5_response = b""
         try:
             v5_response = self._data_queue.get(timeout=self.socket_timeout)
             if v5_response == b"":
                 raise NoSocketAvailableError("Connection closed on read")
             self._data_wanted.clear()
-        except TimeoutError:
+        except (queue.Empty, TimeoutError) as e:
+            self.log.debug(f"Got exception when receiving frame: {e}")
             raise
 
         self.log.debug("RECD: " + v5_response.hex(" "))
@@ -299,8 +301,9 @@ class PySolarmanV5:
                 # so there is no need to check the (fileno, mask) tuples
                 try:
                     data = self.sock.recv(1024)
-                except ConnectionResetError:
-                    self.log.debug(f"[{self.serial}] Connection RESET by peer.")
+                except Exception as e:
+                    # In the case of errors (peer reset, timeout, ...) set received data to empty to signal receive failure
+                    self.log.debug(f"[{self.serial}] Connection error: {e}.")
                     data = b""
                 if data == b"":
                     self.log.debug(f"[POLL] Socket closed. Reader thread exiting.")
