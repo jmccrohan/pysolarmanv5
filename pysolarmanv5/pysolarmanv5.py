@@ -308,7 +308,7 @@ class PySolarmanV5:
                         self._reconnect()
                         if self.sock:
                             self.log.debug(
-                                f"[POLL] Data expected. Will retry the last request"
+                                f"[POLL] Data expected. Will retry the last request: {self._last_frame.hex(' ')}"
                             )
                             self.sock.sendall(self._last_frame)
                             return
@@ -345,7 +345,8 @@ class PySolarmanV5:
             try:
                 self.sock.send(b"")
                 self.sock.close()
-            except OSError:
+            except OSError as e:
+                self.log.debug(f"Closing reader thread failed: {e}")
                 pass
             self._reader_exit.set()
         if self._auto_reconnect:
@@ -379,7 +380,8 @@ class PySolarmanV5:
         try:
             self.sock.send(b"")
             self.sock.close()
-        except OSError:
+        except OSError as e:
+            self.log.debug(f"Closing socket failed: {e}")
             pass
         self._reader_thr.join(0.5)
         self._poll.unregister(self._sock_fd)
@@ -417,7 +419,8 @@ class PySolarmanV5:
             sock = socket.create_connection(
                 (self.address, self.port), self.socket_timeout
             )
-        except OSError:
+        except OSError as e:
+            self.log.debug(f"Socket creation failed: {e}")
             return None
         return sock
 
