@@ -16,6 +16,7 @@ from umodbus.client.serial import rtu
 
 _WIN_PLATFORM = True if platform.system() == "Windows" else False
 
+
 class V5FrameError(Exception):
     """V5 Frame Validation Error"""
 
@@ -344,19 +345,24 @@ class PySolarmanV5:
         """
         Reconnect to the data logger if needed
         """
-        if self._reader_thr.is_alive():
-            try:
-                self.sock.send(b"")
+
+        # Close the old socket. Closing failures can be ignored.
+        try:
+            if self.sock:
+                self.sock.shutdown(socket.SHUT_RDWR)
                 self.sock.close()
-            except OSError as e:
-                self.log.debug(f"Closing reader thread failed: {e}")
-                pass
+        except Exception as e:
+            self.log.debug(f"Closing socket failed: {e}")
+        finally:
+            self.sock = None
             self._reader_exit.set()
         if self._auto_reconnect:
             self.log.debug(
                 f"Auto-Reconnect enabled. Trying to establish a new connection"
             )
-            self._poll.unregister(self._sock_fd)
+            if self._sock_fd:
+                self._poll.unregister(self._sock_fd)
+                self._sock_fd = None
             self.sock = self._create_socket()
             if self.sock:
                 self._sock_fd = self.sock.fileno()
@@ -381,13 +387,18 @@ class PySolarmanV5:
         self._data_wanted.clear()
         self._reader_exit.set()
         try:
-            self.sock.send(b"")
-            self.sock.close()
-        except OSError as e:
+            if self.sock:
+                self.sock.shutdown(socket.SHUT_RDWR)
+                self.sock.close()
+        except Exception as e:
             self.log.debug(f"Closing socket failed: {e}")
-            pass
+        finally:
+            self.sock = None
+
         self._reader_thr.join(0.5)
-        self._poll.unregister(self._sock_fd)
+        if self._sock_fd:
+            self._poll.unregister(self._sock_fd)
+            self._sock_fd = None
 
     def _send_receive_modbus_frame(self, mb_request_frame):
         """Encodes mb_frame, sends/receives v5_frame, decodes response
