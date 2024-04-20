@@ -1,5 +1,18 @@
 # Changelog
 
+## [v3.0.2] - UNRELEASED
+
+### Added
+
+- Enhanced V5 frame validation - Thanks to @githubDante and @Dummy0815 for the
+  PR
+  This should resolve the issues with Deye microinverters and external AC
+  relays.
+  See [GH PR #46](https://github.com/jmccrohan/pysolarmanv5/pull/46) and
+  [GH PR #47](https://github.com/jmccrohan/pysolarmanv5/pull/47) for more info.
+- Enhanced socket error handling - Thanks to @sofkaski for the PR.
+  See [GH PR #52](https://github.com/jmccrohan/pysolarmanv5/pull/52) for more info.
+
 ## [v3.0.1] - 2023-10-04
 
 ### Fixed
