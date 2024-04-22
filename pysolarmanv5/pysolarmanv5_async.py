@@ -1,11 +1,17 @@
 """pysolarmanv5_async.py"""
+
 import asyncio
 from multiprocessing import Event
-from typing import Any
 from umodbus.client.serial import rtu
 from .pysolarmanv5 import NoSocketAvailableError, PySolarmanV5
 
 
+# This could be avoided by changing the class hierarchy.
+# One way would be to introduce a common base class for async and sync classes
+# that would capture attributes and common (internal) sync methods.
+
+
+# pylint: disable=invalid-overridden-method
 class PySolarmanV5Async(PySolarmanV5):
     """
     The PySolarmanV5Async class establishes a TCP connection to a Solarman V5 data
@@ -66,8 +72,10 @@ class PySolarmanV5Async(PySolarmanV5):
                 self.address, self.port
             )
             self.reader_task = loop.create_task(self._conn_keeper(), name="ConnKeeper")
-        except:
-            raise NoSocketAvailableError(f"Cannot open connection to {self.address}")
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            raise NoSocketAvailableError(
+                f"Cannot open connection to {self.address}"
+            ) from e
 
     async def reconnect(self) -> None:
         """
@@ -92,8 +100,10 @@ class PySolarmanV5Async(PySolarmanV5):
                 )
                 self.writer.write(self._last_frame)
                 await self.writer.drain()
-        except:
-            raise NoSocketAvailableError(f"Cannot open connection to {self.address}")
+        except Exception as e:  # pylint: disable=broad-exception-caught::
+            raise NoSocketAvailableError(
+                f"Cannot open connection to {self.address}"
+            ) from e
 
     async def disconnect(self) -> None:
         """
@@ -114,7 +124,6 @@ class PySolarmanV5Async(PySolarmanV5):
         PySolarmanV5 class
 
         """
-        pass
 
     def _send_data(self, data: bytes):
         """
@@ -150,17 +159,9 @@ class PySolarmanV5Async(PySolarmanV5):
                     f"[{self.serial}] Connection closed by the remote. Closing the socket reader."
                 )
                 break
-            elif data.startswith(b"\xa5\x01\x00\x10G"):
-                # Frame with control code 0x4710 - Counter frame
-                self.log.debug(f'[{self.serial}] COUNTER: {data.hex(" ")}')
+            if not self._received_frame_is_valid(data):
                 continue
-            elif not data.startswith(b"\xa5"):
-                self.log.debug(f'[{self.serial}] V5_MISMATCH: {data.hex(" ")}')
-                continue
-            elif data[5] != self.sequence_number:
-                self.log.debug(f'[{self.serial}] V5_SEQ_NO_MISMATCH: {data.hex(" ")}')
-                continue
-            elif self.data_wanted_ev.is_set():
+            if self.data_wanted_ev.is_set():
                 self._send_data(data)
             else:
                 self.log.debug("Data received but nobody waits for it... Discarded")
@@ -199,8 +200,8 @@ class PySolarmanV5Async(PySolarmanV5):
                 raise NoSocketAvailableError(
                     "Connection closed on read. Retry if auto-reconnect is enabled"
                 )
-        except AttributeError:
-            raise NoSocketAvailableError("Connection already closed")
+        except AttributeError as exc:
+            raise NoSocketAvailableError("Connection already closed") from exc
         except NoSocketAvailableError:
             raise
         except Exception as exc:
