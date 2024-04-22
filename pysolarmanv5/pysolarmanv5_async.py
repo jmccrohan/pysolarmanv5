@@ -96,10 +96,10 @@ class PySolarmanV5Async(PySolarmanV5):
             )
             loop = asyncio.get_running_loop()
             self.reader_task = loop.create_task(self._conn_keeper(), name="ConnKeeper")
-            self.log.debug(f"[{self.serial}] Successful reconnect")
+            self.log.debug("[%s] Successful reconnect", self.serial)
             if self.data_wanted_ev.is_set():
                 self.log.debug(
-                    f"[{self.serial}] Data expected. Will retry the last request"
+                    "[%s] Data expected. Will retry the last request", self.serial
                 )
                 self.writer.write(self._last_frame)
                 await self.writer.drain()
@@ -154,12 +154,15 @@ class PySolarmanV5Async(PySolarmanV5):
                 data = await self.reader.read(1024)
             except ConnectionResetError:
                 self.log.debug(
-                    f"[{self.serial}] Connection reset. Closing the socket reader."
+                    "[%s] Connection reset. Closing the socket reader.",
+                    self.serial,
+                    exc_info=True,
                 )
                 break
             if data == b"":
                 self.log.debug(
-                    f"[{self.serial}] Connection closed by the remote. Closing the socket reader."
+                    "[%s] Connection closed by the remote. Closing the socket reader.",
+                    self.serial,
                 )
                 break
             if not self._received_frame_is_valid(data):
@@ -173,7 +176,8 @@ class PySolarmanV5Async(PySolarmanV5):
         # self._send_data(b"")
         if self._needs_reconnect:
             self.log.debug(
-                f"[{self.serial}] Auto reconnect enabled. Will try to restart the socket reader"
+                "[%s] Auto reconnect enabled. Will try to restart the socket reader",
+                self.serial,
             )
             loop = asyncio.get_running_loop()
             loop.create_task(self.reconnect())
@@ -190,7 +194,7 @@ class PySolarmanV5Async(PySolarmanV5):
 
         """
 
-        self.log.debug("SENT: " + data_logging_stick_frame.hex(" "))
+        self.log.debug("SENT: %s", data_logging_stick_frame.hex(" "))
         self.data_wanted_ev.set()
         self._last_frame = data_logging_stick_frame
         try:
@@ -208,12 +212,12 @@ class PySolarmanV5Async(PySolarmanV5):
         except NoSocketAvailableError:
             raise
         except Exception as exc:
-            self.log.exception(f"[{self.serial}] Send/Receive error: {exc}")
+            self.log.exception("[%s] Send/Receive error: %s", self.serial, exc)
             raise
         finally:
             self.data_wanted_ev.clear()
 
-        self.log.debug("RECD: " + v5_response.hex(" "))
+        self.log.debug("RECD: %s", v5_response.hex(" "))
         return v5_response
 
     async def _send_receive_modbus_frame(self, mb_request_frame):
