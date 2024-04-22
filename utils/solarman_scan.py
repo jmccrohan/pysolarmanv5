@@ -4,6 +4,7 @@ import socket
 
 
 def main():
+    """Solarman data logger scanner"""
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
@@ -18,7 +19,7 @@ def main():
             data = sock.recv(1024)
         except socket.timeout:
             break
-        keys = dict.fromkeys(['ipaddress', 'mac', 'serial'])
+        keys = dict.fromkeys(["ipaddress", "mac", "serial"])
         values = data.decode().split(",")
         result = dict(zip(keys, values))
         print(result)

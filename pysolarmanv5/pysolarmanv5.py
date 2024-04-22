@@ -14,21 +14,18 @@ from random import randrange
 from umodbus.client.serial import rtu
 
 
-_WIN_PLATFORM = True if platform.system() == "Windows" else False
+_WIN_PLATFORM = platform.system() == "Windows"
 
 
 class V5FrameError(Exception):
     """V5 Frame Validation Error"""
 
-    pass
-
 
 class NoSocketAvailableError(Exception):
     """No Socket Available Error"""
 
-    pass
 
-
+# pylint: disable-next=too-many-instance-attributes (R0902)
 class PySolarmanV5:
     """
     The PySolarmanV5 class establishes a TCP connection to a Solarman V5 data
@@ -106,21 +103,7 @@ class PySolarmanV5:
         if self.verbose:
             self.log.setLevel("DEBUG")
 
-        self._v5_frame_def()
-
-        self.sock: socket.socket = None  # noqa
-        self._poll: selectors.BaseSelector = None  # noqa
-        self._sock_fd: int = None  # noqa
-        self._auto_reconnect = False
-        self._data_queue: Queue = None  # noqa
-        self._data_wanted: Event = None  # noqa
-        self._reader_exit: Event = None  # noqa
-        self._reader_thr: Thread = None  # noqa
-        self._last_frame: bytes = b""
-        self._socket_setup(kwargs.get("socket"), kwargs.get("auto_reconnect", False))
-
-    def _v5_frame_def(self):
-        """Define and construct V5 request frame structure."""
+        # Define and construct V5 request frame structure.
         self.v5_start = bytes.fromhex("A5")
         self.v5_length = bytes.fromhex("0000")  # placeholder value
         self.v5_controlcode = struct.pack("<H", 0x4510)
@@ -133,6 +116,17 @@ class PySolarmanV5:
         self.v5_offsettime = bytes.fromhex("00000000")
         self.v5_checksum = bytes.fromhex("00")  # placeholder value
         self.v5_end = bytes.fromhex("15")
+
+        self.sock: socket.socket = None  # noqa
+        self._poll: selectors.BaseSelector = None  # noqa
+        self._sock_fd: int = None  # noqa
+        self._auto_reconnect = False
+        self._data_queue: Queue = None  # noqa
+        self._data_wanted: Event = None  # noqa
+        self._reader_exit: Event = None  # noqa
+        self._reader_thr: Thread = None  # noqa
+        self._last_frame: bytes = b""
+        self._socket_setup(kwargs.get("socket"), kwargs.get("auto_reconnect", False))
 
     @staticmethod
     def _calculate_v5_frame_checksum(frame):
@@ -291,23 +285,41 @@ class PySolarmanV5:
         self.log.debug("RECD: " + v5_response.hex(" "))
         return v5_response
 
+    def _received_frame_is_valid(self, frame):
+        """Check that the frame is valid and that the serial number of the received
+        frame matches with the last sent one.
+        Ignore also any counter frames.
+        """
+        if frame.startswith(b"\xa5\x01\x00\x10G"):
+            # Frame with control code 0x4710 - Counter frame
+            self.log.debug(f'[{self.serial}] COUNTER: {frame.hex(" ")}')
+            return False
+        if not frame.startswith(b"\xa5"):
+            self.log.debug(f'[{self.serial}] V5_MISMATCH: {frame.hex(" ")}')
+            return False
+        if frame[5] != self.sequence_number:
+            self.log.debug(f'[{self.serial}] V5_SEQ_NO_MISMATCH: {frame.hex(" ")}')
+            return False
+        return True
+
     def _data_receiver(self):
         self._poll.register(self.sock.fileno(), selectors.EVENT_READ)
         while True:
             events = self._poll.select(0.500)
             if self._reader_exit.is_set():
                 return
+            # pylint: disable-next=unused-variable.
             for event in events:
                 # We are registered only for inbound data on a single socket,
                 # so there is no need to check the (fileno, mask) tuples
                 try:
                     data = self.sock.recv(1024)
-                except Exception as e:
+                except Exception as e:  # pylint: disable=broad-exception-caught
                     # In the case of errors (peer reset, timeout, ...) set received data to empty to signal receive failure
                     self.log.debug(f"[{self.serial}] Connection error: {e}.")
                     data = b""
                 if data == b"":
-                    self.log.debug(f"[POLL] Socket closed. Reader thread exiting.")
+                    self.log.debug("[POLL] Socket closed. Reader thread exiting.")
                     if self._data_wanted.is_set():
                         self._reconnect()
                         if self.sock:
@@ -316,25 +328,14 @@ class PySolarmanV5:
                             )
                             self.sock.sendall(self._last_frame)
                             return
-                        else:
-                            try:
-                                self._data_queue.put_nowait(data)
-                            except queue.Full:
-                                pass
+                        try:
+                            self._data_queue.put_nowait(data)
+                        except queue.Full:
+                            pass
                     else:
                         self._reconnect()
                     return
-                elif data.startswith(b"\xa5\x01\x00\x10G"):
-                    # Frame with control code 0x4710 - Counter frame
-                    self.log.debug(f'[{self.serial}] COUNTER: {data.hex(" ")}')
-                    continue
-                elif not data.startswith(b"\xa5"):
-                    self.log.debug(f'[{self.serial}] V5_MISMATCH: {data.hex(" ")}')
-                    continue
-                elif data[5] != self.sequence_number:
-                    self.log.debug(
-                        f'[{self.serial}] V5_SEQ_NO_MISMATCH: {data.hex(" ")}'
-                    )
+                if not self._received_frame_is_valid(data):
                     continue
                 if self._data_wanted.is_set():
                     self._data_queue.put(data, timeout=self.socket_timeout)
@@ -351,14 +352,14 @@ class PySolarmanV5:
             if self.sock:
                 self.sock.shutdown(socket.SHUT_RDWR)
                 self.sock.close()
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             self.log.debug(f"Closing socket failed: {e}")
         finally:
             self.sock = None
             self._reader_exit.set()
         if self._auto_reconnect:
             self.log.debug(
-                f"Auto-Reconnect enabled. Trying to establish a new connection"
+                "Auto-Reconnect enabled. Trying to establish a new connection"
             )
             if self._sock_fd:
                 self._poll.unregister(self._sock_fd)
@@ -369,9 +370,9 @@ class PySolarmanV5:
                 self._reader_exit.clear()
                 self._reader_thr = Thread(target=self._data_receiver, daemon=True)
                 self._reader_thr.start()
-                self.log.debug(f"Auto-Reconnect successful.")
+                self.log.debug("Auto-Reconnect successful.")
             else:
-                self.log.debug(f"No socket available! Reconnect failed.")
+                self.log.debug("No socket available! Reconnect failed.")
                 self.sock = None
         else:
             self.log.debug("Auto-Reconnect inactive.")
@@ -390,7 +391,7 @@ class PySolarmanV5:
             if self.sock:
                 self.sock.shutdown(socket.SHUT_RDWR)
                 self.sock.close()
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             self.log.debug(f"Closing socket failed: {e}")
         finally:
             self.sock = None
