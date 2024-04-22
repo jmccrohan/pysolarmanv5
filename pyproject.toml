@@ -35,3 +35,15 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 packages = ["pysolarmanv5"]
+
+[tool.pylint.MAIN]
+ignore-paths='docs,examples,tests' 
+
+[tool.pylint."MESSAGES CONTROL"]
+# Reasons for disabling:
+# format: formatting is handled by black
+
+disable = [
+    "format",
+]
+
