@@ -266,7 +266,7 @@ class PySolarmanV5:
         :rtype: bytes
 
         """
-        self.log.debug("SENT: " + data_logging_stick_frame.hex(" "))
+        self.log.debug("SENT: %s", data_logging_stick_frame.hex(" "))
         if not self._reader_thr.is_alive():
             raise NoSocketAvailableError("Connection already closed.")
         self.sock.sendall(data_logging_stick_frame)
@@ -278,27 +278,26 @@ class PySolarmanV5:
             if v5_response == b"":
                 raise NoSocketAvailableError("Connection closed on read")
             self._data_wanted.clear()
-        except (queue.Empty, TimeoutError) as e:
-            self.log.debug(f"Got exception when receiving frame: {e}")
+        except (queue.Empty, TimeoutError):
+            self.log.debug("Got exception when receiving frame", exc_info=True)
             raise
 
-        self.log.debug("RECD: " + v5_response.hex(" "))
+        self.log.debug("RECD: %s", v5_response.hex(" "))
         return v5_response
 
     def _received_frame_is_valid(self, frame):
         """Check that the frame is valid and that the serial number of the received
         frame matches with the last sent one.
-        Ignore also any counter frames.
+        Ignore also any frames with control code 0x4710 (counter frame).
         """
-        if frame.startswith(b"\xa5\x01\x00\x10G"):
-            # Frame with control code 0x4710 - Counter frame
-            self.log.debug(f'[{self.serial}] COUNTER: {frame.hex(" ")}')
-            return False
-        if not frame.startswith(b"\xa5"):
-            self.log.debug(f'[{self.serial}] V5_MISMATCH: {frame.hex(" ")}')
+        if not frame.startswith(self.v5_start):
+            self.log.debug("[%s] V5_MISMATCH: %s", self.serial, frame.hex(" "))
             return False
         if frame[5] != self.sequence_number:
-            self.log.debug(f'[{self.serial}] V5_SEQ_NO_MISMATCH: {frame.hex(" ")}')
+            self.log.debug("[%s] V5_SEQ_NO_MISMATCH: %s", self.serial, frame.hex(" "))
+            return False
+        if frame.startswith(self.v5_start + b"\x01\x00\x10\x47"):
+            self.log.debug("[%s] COUNTER: %s", self.serial, frame.hex(" "))
             return False
         return True
 
@@ -314,9 +313,9 @@ class PySolarmanV5:
                 # so there is no need to check the (fileno, mask) tuples
                 try:
                     data = self.sock.recv(1024)
-                except Exception as e:  # pylint: disable=broad-exception-caught
+                except Exception:  # pylint: disable=broad-exception-caught
                     # In the case of errors (peer reset, timeout, ...) set received data to empty to signal receive failure
-                    self.log.debug(f"[{self.serial}] Connection error: {e}.")
+                    self.log.debug("[%s] Connection error", self.serial, exc_info=True)
                     data = b""
                 if data == b"":
                     self.log.debug("[POLL] Socket closed. Reader thread exiting.")
@@ -324,7 +323,8 @@ class PySolarmanV5:
                         self._reconnect()
                         if self.sock:
                             self.log.debug(
-                                f"[POLL] Data expected. Will retry the last request: {self._last_frame.hex(' ')}"
+                                "[POLL] Data expected. Will retry the last request: %s",
+                                self._last_frame.hex(" "),
                             )
                             self.sock.sendall(self._last_frame)
                             return
@@ -340,20 +340,20 @@ class PySolarmanV5:
                 if self._data_wanted.is_set():
                     self._data_queue.put(data, timeout=self.socket_timeout)
                 else:
-                    self.log.debug("[POLL-DISCARDED] RECD: " + data.hex(" "))
+                    self.log.debug("[POLL-DISCARDED] RECD: %s", data.hex(" "))
 
     def _reconnect(self):
         """
         Reconnect to the data logger if needed
         """
 
-        # Close the old socket. Closing failures can be ignored.
+        # Close the old socket. Closing failures can be ignored and just logged.
         try:
             if self.sock:
                 self.sock.shutdown(socket.SHUT_RDWR)
                 self.sock.close()
-        except Exception as e:  # pylint: disable=broad-exception-caught
-            self.log.debug(f"Closing socket failed: {e}")
+        except Exception:  # pylint: disable=broad-exception-caught
+            self.log.debug("Closing socket failed", exc_info=True)
         finally:
             self.sock = None
             self._reader_exit.set()
@@ -391,8 +391,8 @@ class PySolarmanV5:
             if self.sock:
                 self.sock.shutdown(socket.SHUT_RDWR)
                 self.sock.close()
-        except Exception as e:  # pylint: disable=broad-exception-caught
-            self.log.debug(f"Closing socket failed: {e}")
+        except Exception:  # pylint: disable=broad-exception-caught
+            self.log.debug("Closing socket failed", exc_info=True)
         finally:
             self.sock = None
 
@@ -434,8 +434,8 @@ class PySolarmanV5:
             sock = socket.create_connection(
                 (self.address, self.port), self.socket_timeout
             )
-        except OSError as e:
-            self.log.debug(f"Socket creation failed: {e}")
+        except OSError:
+            self.log.debug("Socket creation failed", exc_info=True)
             return None
         return sock
 
@@ -456,7 +456,7 @@ class PySolarmanV5:
             self._reader_exit = Event()
             self._reader_thr = Thread(target=self._data_receiver, daemon=True)
             self._reader_thr.start()
-            self.log.debug(f"Socket setup completed... {self.sock}")
+            self.log.debug("Socket setup completed... %s", self.sock)
 
     @staticmethod
     def twos_complement(val, num_bits):
