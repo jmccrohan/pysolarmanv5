@@ -5,6 +5,9 @@ from multiprocessing import Event
 from umodbus.client.serial import rtu
 from .pysolarmanv5 import NoSocketAvailableError, PySolarmanV5
 
+# Disable `invalid-overridden-method` rule. The class `PySolarmanV5Async` overrides
+# (=redefines) non-async methods from `PySolarmanV5`.
+# The override in this case is not a problem in practice.
 
 # This could be avoided by changing the class hierarchy.
 # One way would be to introduce a common base class for async and sync classes
