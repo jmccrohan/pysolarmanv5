@@ -385,6 +385,7 @@ class PySolarmanV5:
 
         """
         self._data_wanted.clear()
+        self._auto_reconnect = False
         self._reader_exit.set()
         try:
             if self.sock:
