@@ -13,6 +13,11 @@
 - Enhanced socket error handling - Thanks to @sofkaski for the PR.
   See [GH PR #52](https://github.com/jmccrohan/pysolarmanv5/pull/52) for more info.
 
+### Fixed
+
+- Assorted linter fixes. Thanks to @sofkaski for taking the time to resolve these.
+  See [GH PR #54](https://github.com/jmccrohan/pysolarmanv5/pull/54) for more info.
+
 ## [v3.0.1] - 2023-10-04
 
 ### Fixed
