@@ -69,4 +69,4 @@ Contributions welcome. Please raise any Issues / Pull Requests via [Github](http
 
 ## License
 
-pysolarmanv5 is licensed under the [MIT License](https://github.com/jmccrohan/pysolarmanv5/blob/master/LICENSE). Copyright (c) 2023 Jonathan McCrohan
+pysolarmanv5 is licensed under the [MIT License](https://github.com/jmccrohan/pysolarmanv5/blob/master/LICENSE). Copyright (c) 2024 Jonathan McCrohan
