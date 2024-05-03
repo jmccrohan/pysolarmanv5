@@ -128,65 +128,135 @@ below are in Network Byte Order.
    Figure out how to invert the colours of the SVG packet diagrams upon toggling
    furo's light/dark themes using custom CSS/JS.
 
-   The current hack of using grey as a universal colour is less than ideal.
+   The current hack of duplicating each diagram for light and dark themes is
+   not ideal, but options are limited because packetdiag doesn't support :class:
+   directive.
 
 Request Frame Format
 """"""""""""""""""""
+..
+   Request Frame packetdiag is duplicated below. Only difference is the
+   default_linecolor and default_textcolor values. Used for Furo's dark and
+   light themes respectively.
 
-.. packetdiag::
+.. container:: only-dark
 
-    packetdiag {
-      colwidth = 32
-      scale_interval = 8
-      node_height = 32
-      default_node_color = none
-      default_linecolor = grey
-      default_textcolor = grey
-      default_fontsize = 10
+	.. packetdiag::
 
-      0-7: Start (0xA5)\n(1 byte)
-      8-23: Length\n(2 bytes)
-      24-39: Control Code (0x1045)\n(2 bytes)
-      40-55: Serial (0xAA00)\n(2 bytes)
-      56-87: Logger Serial\n(4 bytes)
-      88-95: Frame Type (0x2)\n(1 byte)
-      96-111: Sensor Type (0x0000)\n(2 bytes)
-      112-143: Total Working Time (0x00000000)\n(4 bytes)
-      144-175: Power On Time (0x00000000)\n(4 bytes)
-      176-207: Offset Time (0x00000000)\n(4 bytes)
-      208-271: Modbus RTU Frame\n(variable bytes)
-      272-279: Checksum\n(1 byte)
-      280-287: End (0x15)\n(1 byte)
-   }
+	    packetdiag {
+	      colwidth = 32
+	      scale_interval = 8
+	      node_height = 32
+	      default_node_color = none
+	      default_linecolor = white
+	      default_textcolor = white
+	      default_fontsize = 10
+
+	      0-7: Start (0xA5)\n(1 byte)
+	      8-23: Length\n(2 bytes)
+	      24-39: Control Code (0x1045)\n(2 bytes)
+	      40-55: Serial (0xAA00)\n(2 bytes)
+	      56-87: Logger Serial\n(4 bytes)
+	      88-95: Frame Type (0x2)\n(1 byte)
+	      96-111: Sensor Type (0x0000)\n(2 bytes)
+	      112-143: Total Working Time (0x00000000)\n(4 bytes)
+	      144-175: Power On Time (0x00000000)\n(4 bytes)
+	      176-207: Offset Time (0x00000000)\n(4 bytes)
+	      208-271: Modbus RTU Frame\n(variable bytes)
+	      272-279: Checksum\n(1 byte)
+	      280-287: End (0x15)\n(1 byte)
+	   }
+
+.. container:: only-light
+
+	.. packetdiag::
+
+	    packetdiag {
+	      colwidth = 32
+	      scale_interval = 8
+	      node_height = 32
+	      default_node_color = none
+	      default_linecolor = black
+	      default_textcolor = black
+	      default_fontsize = 10
+
+	      0-7: Start (0xA5)\n(1 byte)
+	      8-23: Length\n(2 bytes)
+	      24-39: Control Code (0x1045)\n(2 bytes)
+	      40-55: Serial (0xAA00)\n(2 bytes)
+	      56-87: Logger Serial\n(4 bytes)
+	      88-95: Frame Type (0x2)\n(1 byte)
+	      96-111: Sensor Type (0x0000)\n(2 bytes)
+	      112-143: Total Working Time (0x00000000)\n(4 bytes)
+	      144-175: Power On Time (0x00000000)\n(4 bytes)
+	      176-207: Offset Time (0x00000000)\n(4 bytes)
+	      208-271: Modbus RTU Frame\n(variable bytes)
+	      272-279: Checksum\n(1 byte)
+	      280-287: End (0x15)\n(1 byte)
+	   }
 
 Response Frame Format
 """""""""""""""""""""
+..
+   Response Frame packetdiag is duplicated below. Only difference is the
+   default_linecolor and default_textcolor values. Used for Furo's dark and
+   light themes respectively.
 
-.. packetdiag::
+.. container:: only-dark
 
-    packetdiag {
-      colwidth = 32
-      scale_interval = 8
-      node_height = 32
-      default_node_color = none
-      default_linecolor = grey
-      default_textcolor = grey
-      default_fontsize = 10
+	.. packetdiag::
 
-      0-7: Start (0xA5)\n(1 byte)
-      8-23: Length\n(2 bytes)
-      24-39: Control Code (0x1015)\n(2 bytes)
-      40-55: Serial (0xAA00)\n(2 bytes)
-      56-87: Logger Serial\n(4 bytes)
-      88-95: Frame Type (0x02)\n(1 byte)
-      96-103: Status (0x01)\n(1 byte)
-      104-135: Total Working Time\n(4 bytes)
-      136-167: Power On Time\n(4 bytes)
-      168-199: Offset Time\n(4 bytes)
-      200-255: Modbus RTU Frame\n(variable bytes)
-      256-263: Checksum\n(1 byte)
-      264-271: End (0x15)\n(1 byte)
-   }
+	    packetdiag {
+	      colwidth = 32
+	      scale_interval = 8
+	      node_height = 32
+	      default_node_color = none
+	      default_linecolor = white
+	      default_textcolor = white
+	      default_fontsize = 10
+
+	      0-7: Start (0xA5)\n(1 byte)
+	      8-23: Length\n(2 bytes)
+	      24-39: Control Code (0x1015)\n(2 bytes)
+	      40-55: Serial (0xAA00)\n(2 bytes)
+	      56-87: Logger Serial\n(4 bytes)
+	      88-95: Frame Type (0x02)\n(1 byte)
+	      96-103: Status (0x01)\n(1 byte)
+	      104-135: Total Working Time\n(4 bytes)
+	      136-167: Power On Time\n(4 bytes)
+	      168-199: Offset Time\n(4 bytes)
+	      200-255: Modbus RTU Frame\n(variable bytes)
+	      256-263: Checksum\n(1 byte)
+	      264-271: End (0x15)\n(1 byte)
+	   }
+
+.. container:: only-light
+
+	.. packetdiag::
+
+	    packetdiag {
+	      colwidth = 32
+	      scale_interval = 8
+	      node_height = 32
+	      default_node_color = none
+	      default_linecolor = black
+	      default_textcolor = black
+	      default_fontsize = 10
+
+	      0-7: Start (0xA5)\n(1 byte)
+	      8-23: Length\n(2 bytes)
+	      24-39: Control Code (0x1015)\n(2 bytes)
+	      40-55: Serial (0xAA00)\n(2 bytes)
+	      56-87: Logger Serial\n(4 bytes)
+	      88-95: Frame Type (0x02)\n(1 byte)
+	      96-103: Status (0x01)\n(1 byte)
+	      104-135: Total Working Time\n(4 bytes)
+	      136-167: Power On Time\n(4 bytes)
+	      168-199: Offset Time\n(4 bytes)
+	      200-255: Modbus RTU Frame\n(variable bytes)
+	      256-263: Checksum\n(1 byte)
+	      264-271: End (0x15)\n(1 byte)
+	   }
 
 
 Further reading

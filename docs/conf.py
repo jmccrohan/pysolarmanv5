@@ -37,4 +37,10 @@ autosectionlabel_prefix_document = True
 
 packetdiag_html_image_format = 'SVG'
 
+html_static_path = ['_static']
+
+html_css_files = [
+        'css/custom.css',
+        ]
+
 #todo_include_todos = True
