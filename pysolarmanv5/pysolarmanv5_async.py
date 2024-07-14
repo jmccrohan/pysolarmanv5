@@ -103,10 +103,10 @@ class PySolarmanV5Async(PySolarmanV5):
                 )
                 self.writer.write(self._last_frame)
                 await self.writer.drain()
-        except Exception as e:  # pylint: disable=broad-exception-caught::
-            raise NoSocketAvailableError(
-                f"Cannot open connection to {self.address}"
-            ) from e
+        except Exception as e: # pylint: disable=broad-exception-caught and exception-was-never-retrieved:
+            self.log.exception(
+                f"Cannot open connection to {self.address}. [{type(e).__name__}{f': {e}' if f'{e}' else ''}]"
+            )
 
     async def disconnect(self) -> None:
         """
