@@ -200,8 +200,7 @@ class PySolarmanV5Async(PySolarmanV5):
             Can occur even when auto-reconnect is enabled.
 
         """
-
-        self.log.debug("SENT: %s", data_logging_stick_frame.hex(" "))
+        self.log.debug("[%s] SENT: %s", self.serial, data_logging_stick_frame.hex(" "))
         self.data_wanted_ev.set()
         self._last_frame = data_logging_stick_frame
         try:
@@ -226,7 +225,7 @@ class PySolarmanV5Async(PySolarmanV5):
         finally:
             self.data_wanted_ev.clear()
 
-        self.log.debug("RECD: %s", v5_response.hex(" "))
+        self.log.debug("[%s] RECD: %s", self.serial, v5_response.hex(" "))
         return v5_response
 
     async def _send_receive_modbus_frame(self, mb_request_frame):
