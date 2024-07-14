@@ -115,10 +115,17 @@ class PySolarmanV5Async(PySolarmanV5):
         :return: None
 
         """
-        self.reader_task.cancel()
-        self.writer.write(b"")
-        await self.writer.drain()
-        self.writer.close()
+        if self.reader_task:
+            self.reader_task.cancel()
+        if self.writer:
+            try:
+                self.writer.write(b"")
+                await self.writer.drain()
+            except (AttributeError, ConnectionResetError) as e:
+                self.log.debug(f"{e} can be during closing ignored.")
+            finally:
+                self.writer.close()
+                await self.writer.wait_closed()
 
     def _socket_setup(self, *args, **kwargs):
         """Socket setup method
