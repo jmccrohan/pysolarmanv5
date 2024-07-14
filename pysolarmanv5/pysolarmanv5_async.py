@@ -211,6 +211,8 @@ class PySolarmanV5Async(PySolarmanV5):
             raise NoSocketAvailableError("Connection already closed") from exc
         except NoSocketAvailableError:
             raise
+        except TimeoutError:
+            raise
         except Exception as exc:
             self.log.exception("[%s] Send/Receive error: %s", self.serial, exc)
             raise
