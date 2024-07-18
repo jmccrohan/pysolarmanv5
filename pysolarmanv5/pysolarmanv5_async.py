@@ -125,7 +125,10 @@ class PySolarmanV5Async(PySolarmanV5):
                 self.log.debug(f"{e} can be during closing ignored.")
             finally:
                 self.writer.close()
-                await self.writer.wait_closed()
+                try:
+                    await self.writer.wait_closed()
+                except OSError as e: # Happens when host is unreachable.
+                    self.log.debug(f"{e} can be during closing ignored.")
 
     def _socket_setup(self, *args, **kwargs):
         """Socket setup method
