@@ -1,11 +1,13 @@
 """pysolarmanv5.py"""
 
+import errno
 import queue
 import struct
 import socket
 import logging
 import selectors
 import platform
+
 from threading import Thread, Event
 from multiprocessing import Queue
 from typing import Any
@@ -266,7 +268,7 @@ class PySolarmanV5:
         :rtype: bytes
 
         """
-        self.log.debug("SENT: %s", data_logging_stick_frame.hex(" "))
+        self.log.debug("[%s] SENT: %s", self.serial, data_logging_stick_frame.hex(" "))
         if not self._reader_thr.is_alive():
             raise NoSocketAvailableError("Connection already closed.")
         self.sock.sendall(data_logging_stick_frame)
@@ -278,11 +280,16 @@ class PySolarmanV5:
             if v5_response == b"":
                 raise NoSocketAvailableError("Connection closed on read")
             self._data_wanted.clear()
+        except OSError as exc:
+            self.log.debug("Got exception when receiving frame", exc_info=True)
+            if exc.errno == errno.EHOSTUNREACH:
+                raise TimeoutError from exc
+            raise
         except (queue.Empty, TimeoutError):
             self.log.debug("Got exception when receiving frame", exc_info=True)
             raise
 
-        self.log.debug("RECD: %s", v5_response.hex(" "))
+        self.log.debug("[%s] RECD: %s", self.serial, v5_response.hex(" "))
         return v5_response
 
     def _received_frame_is_valid(self, frame):
