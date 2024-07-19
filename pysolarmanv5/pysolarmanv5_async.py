@@ -1,8 +1,11 @@
 """pysolarmanv5_async.py"""
 
+import errno
 import asyncio
+
 from multiprocessing import Event
 from umodbus.client.serial import rtu
+
 from .pysolarmanv5 import NoSocketAvailableError, PySolarmanV5
 
 # Disable `invalid-overridden-method` rule. The class `PySolarmanV5Async` overrides
@@ -221,6 +224,10 @@ class PySolarmanV5Async(PySolarmanV5):
         except NoSocketAvailableError:
             raise
         except TimeoutError:
+            raise
+        except OSError as e:
+            if e.errno == errno.EHOSTUNREACH:
+                raise TimeoutError from e
             raise
         except Exception as exc:
             self.log.exception("[%s] Send/Receive error: %s", self.serial, exc)
