@@ -106,7 +106,7 @@ class PySolarmanV5Async(PySolarmanV5):
                 )
                 self.writer.write(self._last_frame)
                 await self.writer.drain()
-        except Exception as e: # pylint: disable=broad-exception-caught and exception-was-never-retrieved:
+        except Exception as e:  # pylint: disable=broad-exception-caught and exception-was-never-retrieved:
             self.log.exception(
                 f"Cannot open connection to {self.address}. [{type(e).__name__}{f': {e}' if f'{e}' else ''}]"
             )
@@ -130,7 +130,7 @@ class PySolarmanV5Async(PySolarmanV5):
                 self.writer.close()
                 try:
                     await self.writer.wait_closed()
-                except OSError as e: # Happens when host is unreachable.
+                except OSError as e:  # Happens when host is unreachable.
                     self.log.debug(f"{e} can be during closing ignored.")
 
     def _socket_setup(self, *args, **kwargs):
@@ -225,9 +225,9 @@ class PySolarmanV5Async(PySolarmanV5):
             raise
         except TimeoutError:
             raise
-        except OSError as e:
-            if e.errno == errno.EHOSTUNREACH:
-                raise TimeoutError from e
+        except OSError as exc:
+            if exc.errno == errno.EHOSTUNREACH:
+                raise TimeoutError from exc
             raise
         except Exception as exc:
             self.log.exception("[%s] Send/Receive error: %s", self.serial, exc)
