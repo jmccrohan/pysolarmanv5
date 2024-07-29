@@ -1,3 +1,29 @@
+""" Parse and decode V5 frames passed via argv
+
+user@host:~/src/pysolarmanv5$ ./venv/bin/python utils/solarman_decoder.py a5 17 00 10 45 bb 00 b2 6e 3c 6a 02 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01 03 00 03 00 05 75 c9 39 15
+Frame start: a5 (valid: True)
+V5 Checksum: 39 (valid: True)
+Length: 23
+Control Code: V5Request (hex: 4510)
+Sequence numbers: (187, 0) (hex: bb 00)
+Serial Hex: 6a3c6eb2
+Serial: 1782345394
+Frame Type (Inverter): 2
+Frame Status: 0
+Total Time: 0
+PowerOn Time: 0
+Offset Time: 0
+Frame Time: 1970-01-01 00:00:00+00:00
+Checksum: 30153 hex: 75c9 - RTU start at: 0103000300
+========== RTU Payload - [Request] ==========
+	Slave address: 1
+	Function code: 3
+	CRC: 75c9 (valid: True)
+	Request Start Addr: 3 (03)
+	Request Quantity: 5 (05)
+
+"""
+
 import datetime
 import enum
 import sys
@@ -181,7 +207,7 @@ if __name__ == '__main__':
     print(f'Frame start: {solarman.frame_start:02x} (valid: {solarman.frame_start_valid})')
     print(f'V5 Checksum: {solarman.v5_checksum:02x} (valid: {solarman.v5_checksum_valid})')
     print(f'Length: {solarman.v5_length}')
-    print(f'Control Code: {solarman.control_code} (hex: {solarman.control_code:02x})')
+    print(f'Control Code: {solarman.control_code.name} (hex: {solarman.control_code.value:02x})')
     seq_no = solarman.sequence_numbers
     print(f'Sequence numbers: {seq_no} (hex: {seq_no[0]:02x} {seq_no[1]:02x})')
     print(f'Serial Hex: {solarman.serial:02x}')
@@ -194,7 +220,7 @@ if __name__ == '__main__':
     print(f'Offset Time: {solarman.offset_time}')
 
     frame_time = solarman.total_work_time + solarman.power_on_time + solarman.offset_time
-    print(f'Frame Time: {datetime.datetime.utcfromtimestamp(frame_time)}')
+    print(f'Frame Time: {datetime.datetime.fromtimestamp(frame_time, datetime.UTC)}')
     if not solarman.frame_type == V5FrameType.KeepAlive:
         print(f'Checksum: {solarman.frame_crc} hex: {solarman.frame_crc:02x} - RTU start at: {solarman.rtu_head}')
         print(solarman.payload_string())
