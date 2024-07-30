@@ -220,7 +220,7 @@ if __name__ == '__main__':
     print(f'Offset Time: {solarman.offset_time}')
 
     frame_time = solarman.total_work_time + solarman.power_on_time + solarman.offset_time
-    print(f'Frame Time: {datetime.datetime.fromtimestamp(frame_time, datetime.UTC)}')
+    print(f'Frame Time: {datetime.datetime.fromtimestamp(frame_time, datetime.timezone.utc)}')
     if not solarman.frame_type == V5FrameType.KeepAlive:
         print(f'Checksum: {solarman.frame_crc} hex: {solarman.frame_crc:02x} - RTU start at: {solarman.rtu_head}')
         print(solarman.payload_string())
