@@ -28,7 +28,7 @@ import datetime
 import enum
 import sys
 
-from umodbus.client.serial.redundancy_check import add_crc
+from umodbus.client.serial.redundancy_check import get_crc
 
 
 class V5Definitions:
@@ -147,7 +147,7 @@ class V5Frame:
     @property
     def calculated_crc(self) -> int:
         rtu_frame = self._frame[self.rtu_start_at:-4]
-        rtu_crc = add_crc(rtu_frame)[-2:]
+        rtu_crc = get_crc(rtu_frame)
         return rtu_unsigned_int(rtu_crc)
 
     @property
@@ -173,6 +173,18 @@ class V5Frame:
         head = self.rtu_start_at
         return self._frame[head:head+5].hex()
 
+    @property
+    def rtu(self) -> bytes:
+        return self._frame[self.rtu_start_at:-2]
+
+    @property
+    def bogus_frame(self) -> bool:
+        real_crc = self.rtu[-4:-2]
+        calculated = get_crc(self.rtu[:-4])
+
+        return real_crc == calculated
+
+
     def payload_string(self) -> str:
         start = self.rtu_start_at
         if self.control_code == V5CtrlCode.V5Request:
@@ -186,6 +198,9 @@ class V5Frame:
         msg += f'Slave address: {self._frame[start]}\n\t'
         msg += f'Function code: {self._frame[start+1]}\n\t'
         msg += f'CRC: {self.calculated_crc:02x} (valid: {self.rtu_crc_valid})\n\t'
+        if self.bogus_frame:
+            real_crc = self.rtu[-4:-2].hex()
+            msg += f'BOGUS FRAME DETECTED - REAL CRC: {real_crc}\n\t'
 
         if self.control_code == V5CtrlCode.V5Response:
             reported_size = self.v5_length - V5Definitions.RespFrameLen
