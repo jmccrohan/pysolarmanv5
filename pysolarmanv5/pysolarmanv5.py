@@ -423,7 +423,7 @@ class PySolarmanV5:
         mb_response_frame = self._v5_frame_decoder(v5_response_frame)
         return mb_response_frame
 
-    def _handle_bogus(self, frame: bytes) -> bytes:
+    def _handle_double_crc(self, frame: bytes) -> bytes:
         """
         Strip extra zeroes in case that the frame has double CRC applied
 
@@ -453,7 +453,7 @@ class PySolarmanV5:
         try:
             modbus_values = rtu.parse_response_adu(mb_response_frame, mb_request_frame)
         except struct.error:
-            response = self._handle_bogus(mb_response_frame)
+            response = self._handle_double_crc(mb_response_frame)
             modbus_values = rtu.parse_response_adu(response, mb_request_frame)
         return modbus_values
 
