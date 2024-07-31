@@ -452,9 +452,12 @@ class PySolarmanV5:
         mb_response_frame = self._send_receive_modbus_frame(mb_request_frame)
         try:
             modbus_values = rtu.parse_response_adu(mb_response_frame, mb_request_frame)
-        except struct.error:
+        except struct.error as e:
             response = self._handle_double_crc(mb_response_frame)
-            modbus_values = rtu.parse_response_adu(response, mb_request_frame)
+            if len(response) != len(mb_response_frame):
+                modbus_values = rtu.parse_response_adu(response, mb_request_frame)
+            else:
+                raise e
         return modbus_values
 
     def _create_socket(self):
