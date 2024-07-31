@@ -6,7 +6,6 @@ import struct
 
 from multiprocessing import Event
 from umodbus.client.serial import rtu
-from umodbus.client.serial.redundancy_check import get_crc
 
 from .pysolarmanv5 import NoSocketAvailableError, PySolarmanV5
 
