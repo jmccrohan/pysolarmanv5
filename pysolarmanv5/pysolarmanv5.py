@@ -435,7 +435,7 @@ class PySolarmanV5:
         :return: modified (if necessary) RTU frame
         """
 
-        zeroes = bytes.fromhex('0000')
+        zeroes = bytes.fromhex("0000")
         if not frame.endswith(zeroes):
             return frame
         stripped = frame[:-2]

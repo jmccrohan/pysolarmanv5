@@ -33,8 +33,8 @@ from umodbus.client.serial.redundancy_check import get_crc
 
 class V5Definitions:
 
-    Start = 0xa5
-    End   = 0x15
+    Start = 0xA5
+    End = 0x15
 
     ReqFrameLen = 15
     RespFrameLen = 14
@@ -46,7 +46,7 @@ class V5CtrlCode(int, enum.Enum):
     LoggerPing = 0x4710
     LoggerResponse = 0x4210
 
-    Unknown = 0xdeadc0de
+    Unknown = 0xDEADC0DE
 
     @classmethod
     def _missing_(cls, value):
@@ -66,11 +66,11 @@ class V5FrameType(int, enum.Enum):
 
 
 def unsigned_int(x: bytes) -> int:
-    return int.from_bytes(x, byteorder='little', signed=False)
+    return int.from_bytes(x, byteorder="little", signed=False)
 
 
 def rtu_unsigned_int(x: bytes) -> int:
-    return int.from_bytes(x, byteorder='big', signed=False)
+    return int.from_bytes(x, byteorder="big", signed=False)
 
 
 class V5Frame:
@@ -91,7 +91,7 @@ class V5Frame:
         flen = len(self._frame) - 2
         check = 0
         for i in range(1, flen):
-            check = (check + self._frame[i]) & 0xff
+            check = (check + self._frame[i]) & 0xFF
         return check
 
     @property
@@ -146,7 +146,7 @@ class V5Frame:
 
     @property
     def calculated_crc(self) -> int:
-        rtu_frame = self._frame[self.rtu_start_at:-4]
+        rtu_frame = self._frame[self.rtu_start_at : -4]
         rtu_crc = get_crc(rtu_frame)
         return rtu_unsigned_int(rtu_crc)
 
@@ -163,19 +163,21 @@ class V5Frame:
 
         :return:
         """
-        if self.control_code == V5CtrlCode.V5Request or \
-                self.control_code == V5CtrlCode.LoggerResponse:
+        if (
+            self.control_code == V5CtrlCode.V5Request
+            or self.control_code == V5CtrlCode.LoggerResponse
+        ):
             return 26
         return 25
 
     @property
     def rtu_head(self) -> str:
         head = self.rtu_start_at
-        return self._frame[head:head+5].hex()
+        return self._frame[head : head + 5].hex()
 
     @property
     def rtu(self) -> bytes:
-        return self._frame[self.rtu_start_at:-2]
+        return self._frame[self.rtu_start_at : -2]
 
     @property
     def double_crc_frame(self) -> bool:
@@ -184,58 +186,69 @@ class V5Frame:
 
         return real_crc == calculated
 
-
     def payload_string(self) -> str:
         start = self.rtu_start_at
         if self.control_code == V5CtrlCode.V5Request:
-            payload_t = 'Request'
+            payload_t = "Request"
         elif self.control_code == V5CtrlCode.V5Response:
-            payload_t = 'Response'
+            payload_t = "Response"
         else:
-            payload_t = 'Unknown'
+            payload_t = "Unknown"
 
-        msg = '=' * 10 + f' RTU Payload - [{payload_t}] ' + '=' * 10 + '\n\t'
-        msg += f'Slave address: {self._frame[start]}\n\t'
-        msg += f'Function code: {self._frame[start+1]}\n\t'
-        msg += f'CRC: {self.calculated_crc:02x} (valid: {self.rtu_crc_valid})\n\t'
+        msg = "=" * 10 + f" RTU Payload - [{payload_t}] " + "=" * 10 + "\n\t"
+        msg += f"Slave address: {self._frame[start]}\n\t"
+        msg += f"Function code: {self._frame[start+1]}\n\t"
+        msg += f"CRC: {self.calculated_crc:02x} (valid: {self.rtu_crc_valid})\n\t"
         if self.double_crc_frame:
             real_crc = self.rtu[-4:-2].hex()
-            msg += f'DOUBLE CRC FRAME DETECTED - REAL CRC: {real_crc}\n\t'
+            msg += f"DOUBLE CRC FRAME DETECTED - REAL CRC: {real_crc}\n\t"
 
         if self.control_code == V5CtrlCode.V5Response:
             reported_size = self.v5_length - V5Definitions.RespFrameLen
-            msg += f'Quantity: {reported_size}\n\t'
-            msg += f'Data: {self._frame[start:-2].hex()}\n\t'
+            msg += f"Quantity: {reported_size}\n\t"
+            msg += f"Data: {self._frame[start:-2].hex()}\n\t"
         elif self.control_code == V5CtrlCode.V5Request:
-            addr = rtu_unsigned_int(self._frame[start+2:start+4])
-            qty = rtu_unsigned_int(self._frame[start+4:start+6])
-            msg += f'Request Start Addr: {addr} ({addr:02x})\n\t'
-            msg += f'Request Quantity: {qty} ({qty:02x})\n\t'
+            addr = rtu_unsigned_int(self._frame[start + 2 : start + 4])
+            qty = rtu_unsigned_int(self._frame[start + 4 : start + 6])
+            msg += f"Request Start Addr: {addr} ({addr:02x})\n\t"
+            msg += f"Request Quantity: {qty} ({qty:02x})\n\t"
 
         return msg
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     frame = sys.argv[1:]
-    solarman = V5Frame(''.join(frame))
+    solarman = V5Frame("".join(frame))
 
-    print(f'Frame start: {solarman.frame_start:02x} (valid: {solarman.frame_start_valid})')
-    print(f'V5 Checksum: {solarman.v5_checksum:02x} (valid: {solarman.v5_checksum_valid})')
-    print(f'Length: {solarman.v5_length}')
-    print(f'Control Code: {solarman.control_code.name} (hex: {solarman.control_code.value:02x})')
+    print(
+        f"Frame start: {solarman.frame_start:02x} (valid: {solarman.frame_start_valid})"
+    )
+    print(
+        f"V5 Checksum: {solarman.v5_checksum:02x} (valid: {solarman.v5_checksum_valid})"
+    )
+    print(f"Length: {solarman.v5_length}")
+    print(
+        f"Control Code: {solarman.control_code.name} (hex: {solarman.control_code.value:02x})"
+    )
     seq_no = solarman.sequence_numbers
-    print(f'Sequence numbers: {seq_no} (hex: {seq_no[0]:02x} {seq_no[1]:02x})')
-    print(f'Serial Hex: {solarman.serial:02x}')
-    print(f'Serial: {solarman.serial}')
+    print(f"Sequence numbers: {seq_no} (hex: {seq_no[0]:02x} {seq_no[1]:02x})")
+    print(f"Serial Hex: {solarman.serial:02x}")
+    print(f"Serial: {solarman.serial}")
     ftype = solarman.frame_type
-    print(f'Frame Type ({ftype.name}): {ftype.value}')
-    print(f'Frame Status: {solarman.frame_status}')
-    print(f'Total Time: {solarman.total_work_time}')
-    print(f'PowerOn Time: {solarman.power_on_time}')
-    print(f'Offset Time: {solarman.offset_time}')
+    print(f"Frame Type ({ftype.name}): {ftype.value}")
+    print(f"Frame Status: {solarman.frame_status}")
+    print(f"Total Time: {solarman.total_work_time}")
+    print(f"PowerOn Time: {solarman.power_on_time}")
+    print(f"Offset Time: {solarman.offset_time}")
 
-    frame_time = solarman.total_work_time + solarman.power_on_time + solarman.offset_time
-    print(f'Frame Time: {datetime.datetime.fromtimestamp(frame_time, datetime.timezone.utc)}')
+    frame_time = (
+        solarman.total_work_time + solarman.power_on_time + solarman.offset_time
+    )
+    print(
+        f"Frame Time: {datetime.datetime.fromtimestamp(frame_time, datetime.timezone.utc)}"
+    )
     if not solarman.frame_type == V5FrameType.KeepAlive:
-        print(f'Checksum: {solarman.frame_crc} hex: {solarman.frame_crc:02x} - RTU start at: {solarman.rtu_head}')
+        print(
+            f"Checksum: {solarman.frame_crc} hex: {solarman.frame_crc:02x} - RTU start at: {solarman.rtu_head}"
+        )
         print(solarman.payload_string())
