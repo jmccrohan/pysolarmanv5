@@ -48,7 +48,11 @@ def function_response_from_request(req: bytes):
         res = func.create_response_pdu(
             [random.randint(0, 2**16 - 1) for x in range(func.quantity)]
         )
-    return add_crc(slave_addr + res)
+    # Randomly inject Double CRC errors (see GH Issue #62)
+    if random.choice([True, False]):
+        return add_crc(add_crc(slave_addr + res))
+    else:
+        return add_crc(slave_addr + res)
 
 
 class MockDatalogger(PySolarmanV5):
