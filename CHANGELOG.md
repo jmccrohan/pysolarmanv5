@@ -1,5 +1,26 @@
 # Changelog
 
+## [v3.0.3] - UNRELEASED
+
+### Added
+
+- Workaround for inverter/data loggers with double CRC bug - Thanks to
+  @githubDante and @davidrapan for help in getting to the bottom of this issue.
+  This should enable support for devices that were previously supported by the
+  old native parser in [StephanJoubert/home_assistant_solarman](https://github.com/StephanJoubert/home_assistant_solarman)
+  HA integration (DEYE + possibly others?). See [GH issue #62](https://github.com/jmccrohan/pysolarmanv5/issues/62)
+  for more info.
+- Standalone solarman V5 frame decoder added by @githubDante. See [GH PR #63](https://github.com/jmccrohan/pysolarmanv5/pull/63)
+  for more info.
+- Various error handling and disconnection fixes added by @davidrapan. See [GH PR #61](https://github.com/jmccrohan/pysolarmanv5/pull/61)
+  for more info.
+- Added @githubDante as a project collaborator (push/write permissions on Github)
+
+### Fixed
+
+- Apply proper light/dark theming to the packetdiag diagrams on Solarman V5
+  protocol docs (no more universal grey!)
+
 ## [v3.0.2] - 2024-04-27
 
 ### Added
