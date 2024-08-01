@@ -107,10 +107,8 @@ class PySolarmanV5Async(PySolarmanV5):
                 )
                 self.writer.write(self._last_frame)
                 await self.writer.drain()
-        except (
-            Exception
-        ) as e:  # pylint: disable=broad-exception-caught and exception-was-never-retrieved:
-            self.log.exception(
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            self.log.exception(  # pylint: disable=logging-fstring-interpolation
                 f"Cannot open connection to {self.address}. [{type(e).__name__}{f': {e}' if f'{e}' else ''}]"
             )
 
@@ -128,13 +126,17 @@ class PySolarmanV5Async(PySolarmanV5):
                 self.writer.write(b"")
                 await self.writer.drain()
             except (AttributeError, ConnectionResetError) as e:
-                self.log.debug(f"{e} can be during closing ignored.")
+                self.log.debug(
+                    f"{e} can be during closing ignored."
+                )  # pylint: disable=logging-fstring-interpolation
             finally:
                 self.writer.close()
                 try:
                     await self.writer.wait_closed()
                 except OSError as e:  # Happens when host is unreachable.
-                    self.log.debug(f"{e} can be during closing ignored.")
+                    self.log.debug(
+                        f"{e} can be during closing ignored."
+                    )  # pylint: disable=logging-fstring-interpolation
 
     def _socket_setup(self, *args, **kwargs):
         """Socket setup method

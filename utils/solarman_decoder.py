@@ -163,10 +163,7 @@ class V5Frame:
 
         :return:
         """
-        if (
-            self.control_code == V5CtrlCode.V5Request
-            or self.control_code == V5CtrlCode.LoggerResponse
-        ):
+        if self.control_code in (V5CtrlCode.V5Request, V5CtrlCode.LoggerResponse):
             return 26
         return 25
 
@@ -247,7 +244,7 @@ if __name__ == "__main__":
     print(
         f"Frame Time: {datetime.datetime.fromtimestamp(frame_time, datetime.timezone.utc)}"
     )
-    if not solarman.frame_type == V5FrameType.KeepAlive:
+    if solarman.frame_type != V5FrameType.KeepAlive:
         print(
             f"Checksum: {solarman.frame_crc} hex: {solarman.frame_crc:02x} - RTU start at: {solarman.rtu_head}"
         )

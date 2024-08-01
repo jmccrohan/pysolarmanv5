@@ -281,13 +281,13 @@ class PySolarmanV5:
             if v5_response == b"":
                 raise NoSocketAvailableError("Connection closed on read")
             self._data_wanted.clear()
+        except (queue.Empty, TimeoutError):
+            self.log.debug("Got exception when receiving frame", exc_info=True)
+            raise
         except OSError as exc:
             self.log.debug("Got exception when receiving frame", exc_info=True)
             if exc.errno == errno.EHOSTUNREACH:
                 raise TimeoutError from exc
-            raise
-        except (queue.Empty, TimeoutError):
-            self.log.debug("Got exception when receiving frame", exc_info=True)
             raise
 
         self.log.debug("[%s] RECD: %s", self.serial, v5_response.hex(" "))
@@ -441,8 +441,7 @@ class PySolarmanV5:
         stripped = frame[:-2]
         if get_crc(stripped[:-2]) == stripped[-2:]:
             return stripped
-        else:
-            return frame
+        return frame
 
     def _get_modbus_response(self, mb_request_frame):
         """Returns mb response values for a given mb_request_frame
