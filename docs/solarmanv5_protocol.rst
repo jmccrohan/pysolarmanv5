@@ -92,7 +92,14 @@ and is composed of:
   logging stick in seconds.
 * **Offset Time** (*four bytes*) – Denotes offset timestamp, in seconds. This is
   defined as current data logging stick timestamp minus **Total Working Time**.
-* **Modbus RTU Frame** (*variable length*) – Modbus RTU response frame.
+* **Modbus RTU Frame** (*variable length*) – Modbus RTU response frame. Some
+  inverter/data logger combinations (DEYE + possibly others) exhibit a bug
+  whereby the Modbus frame is suffixed with two addtional bytes. It is assumed
+  that these devices are erroneously calculating and appending the Modbus CRC
+  twice. This is effectively `one-pass CRC checking
+  <https://en.wikipedia.org/wiki/Computation_of_cyclic_redundancy_checks#One-pass_checking>`_
+  and as a result, the additional two bytes are always ``0x0000``. pysolarmanv5
+  will transparently detect and correct this double CRC issue.
 
 Response Timestamp Fields
 """""""""""""""""""""""""

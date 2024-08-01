@@ -178,7 +178,7 @@ class V5Frame:
         return self._frame[self.rtu_start_at:-2]
 
     @property
-    def bogus_frame(self) -> bool:
+    def double_crc_frame(self) -> bool:
         real_crc = self.rtu[-4:-2]
         calculated = get_crc(self.rtu[:-4])
 
@@ -198,9 +198,9 @@ class V5Frame:
         msg += f'Slave address: {self._frame[start]}\n\t'
         msg += f'Function code: {self._frame[start+1]}\n\t'
         msg += f'CRC: {self.calculated_crc:02x} (valid: {self.rtu_crc_valid})\n\t'
-        if self.bogus_frame:
+        if self.double_crc_frame:
             real_crc = self.rtu[-4:-2].hex()
-            msg += f'BOGUS FRAME DETECTED - REAL CRC: {real_crc}\n\t'
+            msg += f'DOUBLE CRC FRAME DETECTED - REAL CRC: {real_crc}\n\t'
 
         if self.control_code == V5CtrlCode.V5Response:
             reported_size = self.v5_length - V5Definitions.RespFrameLen

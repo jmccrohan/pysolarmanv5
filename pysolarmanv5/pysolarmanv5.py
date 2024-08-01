@@ -427,6 +427,10 @@ class PySolarmanV5:
         """
         Strip extra zeroes in case that the frame has double CRC applied
 
+        .. note::
+           See the discussion on `GitHub issue #62 <https://github.com/jmccrohan/pysolarmanv5/issues/62>`_
+           for more info.
+
         :param frame: RTU response
         :return: modified (if necessary) RTU frame
         """
