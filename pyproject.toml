@@ -18,6 +18,8 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+    "build",
+    "twine",
     "black",
     "pylint",
     "pytest",
