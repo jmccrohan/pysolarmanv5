@@ -108,7 +108,7 @@ class PySolarmanV5Async(PySolarmanV5):
                 self.writer.write(self._last_frame)
                 await self.writer.drain()
         except Exception as e:  # pylint: disable=broad-exception-caught
-            self.log.exception(  # pylint: disable=logging-fstring-interpolation
+            self.log.debug(  # pylint: disable=logging-fstring-interpolation
                 f"Cannot open connection to {self.address}. [{type(e).__name__}{f': {e}' if f'{e}' else ''}]"
             )
 
