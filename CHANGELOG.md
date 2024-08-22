@@ -1,5 +1,17 @@
 # Changelog
 
+## [v3.0.4] - 2024-08-22
+
+### Changed
+
+- lower async reconnect exception log level to debug - Thanks @davidrapan
+- Various code cleanups (black, lint)
+- Added build and twine to requirements-dev
+
+### Fixed
+
+- Add v3.0.3 release date to CHANGELOG.md (released version dated as UNRELEASED)
+
 ## [v3.0.3] - 2024-08-01
 
 ### Added
