@@ -15,6 +15,7 @@ from random import randrange
 
 from umodbus.client.serial import rtu
 from umodbus.client.serial.redundancy_check import get_crc
+from umodbus.exceptions import error_code_to_exception_map
 
 
 _WIN_PLATFORM = platform.system() == "Windows"
@@ -256,7 +257,11 @@ class PySolarmanV5:
         modbus_frame = v5_frame[25 : frame_len - 2]
 
         if len(modbus_frame) < 5:
-            raise V5FrameError("V5 frame does not contain a valid Modbus RTU frame")
+            if len(modbus_frame) > 0 and error_code_to_exception_map.get(modbus_frame[0]):
+                err = error_code_to_exception_map.get(modbus_frame[0])
+                raise V5FrameError(f"V5 Modbus EXCEPTION: {err.__name__}")
+            else:
+                raise V5FrameError("V5 frame does not contain a valid Modbus RTU frame")
 
         return modbus_frame
 
