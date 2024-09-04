@@ -34,6 +34,10 @@ class _Singleton(type):
 
 def function_response_from_request(req: bytes):
     func = create_function_from_request_pdu(req[2:-2])
+    if func.starting_address > 4000:
+        ex_code = random.choice([1, 2, 3, 4, 5, 6])
+        return struct.pack("<H", ex_code)
+
     slave_addr = req[1:2]
     res = b""
     if isinstance(func, ReadCoils):

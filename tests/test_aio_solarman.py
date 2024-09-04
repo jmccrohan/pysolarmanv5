@@ -1,5 +1,7 @@
+import pytest
+
 from setup_test import SolarmanServer, AioSolarmanServer
-from pysolarmanv5 import PySolarmanV5Async, NoSocketAvailableError
+from pysolarmanv5 import PySolarmanV5Async, NoSocketAvailableError, V5FrameError
 import asyncio
 import logging
 
@@ -12,7 +14,7 @@ def test_async():
     async def wrapper():
         log.debug("Async starting")
         solarman = PySolarmanV5Async(
-            "127.0.0.1", 2612749371, auto_reconnect=True, verbose=True, socket_timeout=2
+            "127.0.0.1", 2612749371, auto_reconnect=True, verbose=True, socket_timeout=5
         )
         await solarman.connect()
         log.debug("Async connected!!!")
@@ -33,8 +35,17 @@ def test_async():
             res = await solarman.read_holding_registers(200, 4)
             res = await solarman.read_holding_registers(20, 4)
         assert len(res) == 4
+
         await solarman.disconnect()
         log.debug("Async disconnected!!!")
+
+        log.debug("[ASync] ===== Starting exception test =====")
+        await solarman.reconnect()
+        with pytest.raises(V5FrameError, match="V5 Modbus EXCEPTION") as e_info:
+            res = await solarman.read_holding_registers(4500, 4)
+
+        assert e_info.type is V5FrameError
+        log.debug(f"[ASyncException] {e_info}")
 
     try:
         loop = asyncio.get_running_loop()
