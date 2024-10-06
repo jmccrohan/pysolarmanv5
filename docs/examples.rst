@@ -26,3 +26,11 @@ Solarman Proxy
 
 .. literalinclude:: ../examples/solarman_proxy.py
    :linenos:
+
+
+Unicats scan
+^^^^^^^^^^^^
+
+.. code-block:: console
+
+    (venv) user@host:~/github/pysolarmanv5 $ python3 utils/solarman_uni_scan.py wlan0
