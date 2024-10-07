@@ -28,7 +28,7 @@ Solarman Proxy
    :linenos:
 
 
-Unicats scan
+Unicast scan
 ^^^^^^^^^^^^
 
 .. code-block:: console
