@@ -95,7 +95,7 @@ async def aio_main(probes: List[SolarmanProbe]):
 
 
 if __name__ == "__main__":
-    if platform.system().lower() != 'linux':
+    if platform.system().lower() != "linux":
         print(f"This platform is not supported")
         sys.exit(1)
     args = sys.argv[1:]
