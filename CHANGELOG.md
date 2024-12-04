@@ -1,5 +1,20 @@
 # Changelog
 
+## [v3.0.5] - 2024-12-04
+
+### Added
+
+- UDP Unicast Scanner by @githubDante. [GH PR #73](https://github.com/jmccrohan/pysolarmanv5/pull/73)
+
+### Changed
+
+- Update tests to cater for more exceptions
+- Expose umodbus exceptions where available in V5FrameError exceptions
+
+### Fixed
+
+- PySolarmanV5Async connection timeout issue. [GH PR #77](https://github.com/jmccrohan/pysolarmanv5/pull/77)
+
 ## [v3.0.4] - 2024-08-22
 
 ### Changed
