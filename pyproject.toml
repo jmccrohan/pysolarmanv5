@@ -1,6 +1,6 @@
 [project]
 name = "pysolarmanv5"
-version = "3.0.4"
+version = "3.0.5"
 description = "A Python library for interacting with Solarman (IGEN-Tech) v5 based Solar Data Loggers"
 readme = "README.md"
 requires-python = ">=3.8"
