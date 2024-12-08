@@ -73,11 +73,11 @@ class PySolarmanV5Async(PySolarmanV5):
         :raises NoSocketAvailableError: When connection cannot be established
 
         """
-        loop = asyncio.get_running_loop()
         try:
             self.reader, self.writer = await asyncio.wait_for(
                 asyncio.open_connection(self.address, self.port), self.socket_timeout
             )
+            loop = asyncio.get_running_loop()
             self.reader_task = loop.create_task(self._conn_keeper(), name="ConnKeeper")
         except Exception as e:  # pylint: disable=broad-exception-caught
             raise NoSocketAvailableError(
@@ -95,8 +95,8 @@ class PySolarmanV5Async(PySolarmanV5):
         try:
             if self.reader_task:
                 self.reader_task.cancel()
-            self.reader, self.writer = await asyncio.open_connection(
-                self.address, self.port
+            self.reader, self.writer = await asyncio.wait_for(
+                asyncio.open_connection(self.address, self.port), self.socket_timeout
             )
             loop = asyncio.get_running_loop()
             self.reader_task = loop.create_task(self._conn_keeper(), name="ConnKeeper")
