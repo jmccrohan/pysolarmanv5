@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- PySolarmanV5Async reconnect timeout [GH PR #78](https://github.com/jmccrohan/pysolarmanv5/pull/78)
+
 ## [v3.0.5] - 2024-12-04
 
 ### Added
