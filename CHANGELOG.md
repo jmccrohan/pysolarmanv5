@@ -1,6 +1,10 @@
 # Changelog
 
-## [Unreleased]
+## [v3.0.6] - 2024-12-11
+
+### Changed
+
+- Optimise modbus exception handling [GH PR #79](https://github.com/jmccrohan/pysolarmanv5/pull/79)
 
 ### Fixed
 
