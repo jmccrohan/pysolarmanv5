@@ -257,9 +257,9 @@ class PySolarmanV5:
         modbus_frame = v5_frame[25 : frame_len - 2]
 
         if len(modbus_frame) < 5:
-            if len(modbus_frame) > 0 and (err := error_code_to_exception_map.get(
-                modbus_frame[0]
-            )):
+            if len(modbus_frame) > 0 and (
+                err := error_code_to_exception_map.get(modbus_frame[0])
+            ):
                 raise V5FrameError(f"V5 Modbus EXCEPTION: {err.__name__}")
             raise V5FrameError("V5 frame does not contain a valid Modbus RTU frame")
 
