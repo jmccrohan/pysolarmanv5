@@ -195,7 +195,7 @@ class PySolarmanV5Async(PySolarmanV5):
                     f"[{self.serial}] V5_HEARTBEAT error: {type(e).__name__}{f': {e}' if f'{e}' else ''}"
                 )
             except Exception as e:
-                self.log.exception("[%s] Send/Receive error: %s", self.serial, e)
+                self.log.exception("[%s] V5_HEARTBEAT error: %s", self.serial, e)
             return False
         return True
 
