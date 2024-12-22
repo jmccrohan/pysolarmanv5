@@ -167,7 +167,7 @@ class PySolarmanV5Async(PySolarmanV5):
         """
         if frame.startswith(self.v5_start + b"\x01\x00\x10\x47"):
             self.log.debug("[%s] V5_HEARTBEAT: %s", self.serial, frame.hex(" "))
-            response_frame = self._v5_heartbeat_response_frame(frame)
+            response_frame = self._v5_time_response_frame(frame)
             self.log.debug("[%s] V5_HEARTBEAT RESP: %s", self.serial, response_frame.hex(" "))
             try:
                 self.writer.write(response_frame)
