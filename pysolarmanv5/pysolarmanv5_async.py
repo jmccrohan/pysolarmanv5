@@ -119,24 +119,29 @@ class PySolarmanV5Async(PySolarmanV5):
         :return: None
 
         """
-        if self.reader_task:
-            self.reader_task.cancel()
-        if self.writer:
-            try:
-                self.writer.write(b"")
-                await self.writer.drain()
-            except (AttributeError, ConnectionResetError) as e:
-                self.log.debug(
-                    f"{e} can be during closing ignored."
-                )  # pylint: disable=logging-fstring-interpolation
-            finally:
-                self.writer.close()
+        try:
+            if self.reader_task:
+                self.reader_task.cancel()
+            if self.writer:
                 try:
-                    await self.writer.wait_closed()
-                except OSError as e:  # Happens when host is unreachable.
+                    self.writer.write(b"")
+                    await self.writer.drain()
+                except (AttributeError, ConnectionResetError) as e:
                     self.log.debug(
                         f"{e} can be during closing ignored."
                     )  # pylint: disable=logging-fstring-interpolation
+                finally:
+                    self.writer.close()
+                    try:
+                        await self.writer.wait_closed()
+                    except OSError as e:  # Happens when host is unreachable.
+                        self.log.debug(
+                            f"{e} can be during closing ignored."
+                        )  # pylint: disable=logging-fstring-interpolation
+        finally:
+            self.reader_task = None
+            self.reader = None
+            self.writer = None
 
     def _socket_setup(self, *args, **kwargs):
         """Socket setup method
