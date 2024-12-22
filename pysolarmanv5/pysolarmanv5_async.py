@@ -165,7 +165,8 @@ class PySolarmanV5Async(PySolarmanV5):
         """
         Handles frames with known control codes :func:`_received_frame_response() <pysolarmanv5.PySolarmanV5._received_frame_response>`
         """
-        if (response_frame := self._received_frame_response(frame)) is not None:
+        do_continue, response_frame = self._received_frame_response(frame)
+        if response_frame is not None:
             try:
                 self.writer.write(response_frame)
                 await self.writer.drain()
@@ -179,8 +180,7 @@ class PySolarmanV5Async(PySolarmanV5):
                 )
             except Exception as e:
                 self.log.exception("[%s] V5_PROTOCOL error: %s", self.serial, e)
-            return False
-        return True
+        return do_continue
 
     async def _conn_keeper(self) -> None:
         """

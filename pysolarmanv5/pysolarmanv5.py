@@ -336,38 +336,44 @@ class PySolarmanV5:
         """
         Return response to frames with control codes 0x41 (handshake), 0x42 (data), 0x43 (wifi) and 0x47 (heartbeat).
         """
+        do_continue = True
         response_frame = None
         if frame[4] == 0x41:
+            do_continue = False
             self.log.debug("[%s] V5_HANDSHAKE: %s", self.serial, frame.hex(" "))
             response_frame = self._v5_time_response_frame(frame)
             self.log.debug("[%s] V5_HANDSHAKE RESP: %s", self.serial, response_frame.hex(" "))
         if frame[4] == 0x42:
+            do_continue = False # Maybe True and thus process the packet in the future?
             self.log.debug("[%s] V5_DATA: %s", self.serial, frame.hex(" "))
             response_frame = self._v5_time_response_frame(frame)
             self.log.debug("[%s] V5_DATA RESP: %s", self.serial, response_frame.hex(" "))
         if frame[4] == 0x43:
+            do_continue = False
             self.log.debug("[%s] V5_WIFI: %s", self.serial, frame.hex(" "))
             response_frame = self._v5_time_response_frame(frame)
             self.log.debug("[%s] V5_WIFI RESP: %s", self.serial, response_frame.hex(" "))
         if frame[4] == 0x47:
+            do_continue = False
             self.log.debug("[%s] V5_HEARTBEAT: %s", self.serial, frame.hex(" "))
             response_frame = self._v5_time_response_frame(frame)
             self.log.debug("[%s] V5_HEARTBEAT RESP: %s", self.serial, response_frame.hex(" "))
         if frame[4] == 0x48:
+            do_continue = False
             self.log.debug("[%s] V5_REPORT: %s", self.serial, frame.hex(" "))
             response_frame = self._v5_time_response_frame(frame)
             self.log.debug("[%s] V5_REPORT RESP: %s", self.serial, response_frame.hex(" "))
-        return response_frame
+        return do_continue, response_frame
 
     def _handle_protocol_frame(self, frame):
         """
         Handles frames with known control codes :func:`_received_frame_response() <pysolarmanv5.PySolarmanV5._received_frame_response>`
         """
-        if (response_frame := self._received_frame_response(frame)) is not None:
+        do_continue, response_frame = self._received_frame_response(frame)
+        if response_frame is not None:
             if self._reader_thr.is_alive():
                 self.sock.sendall(response_frame)
-            return False
-        return True
+        return do_continue
 
     def _data_receiver(self):
         self._poll.register(self.sock.fileno(), selectors.EVENT_READ)
