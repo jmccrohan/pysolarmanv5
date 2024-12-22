@@ -163,26 +163,9 @@ class PySolarmanV5Async(PySolarmanV5):
 
     async def _handle_protocol_frame(self, frame):
         """
-        Handles frames with control code 0x41 (handshake), 0x42 (data), 0x43 (wifi) and 0x47 (heartbeat).
+        Handles frames with known control codes :func:`_received_frame_response() <pysolarmanv5.PySolarmanV5._received_frame_response>`
         """
-        response_frame = None
-        if frame[4] == 0x41:
-            self.log.debug("[%s] V5_HANDSHAKE: %s", self.serial, frame.hex(" "))
-            response_frame = self._v5_time_response_frame(frame)
-            self.log.debug("[%s] V5_HANDSHAKE RESP: %s", self.serial, response_frame.hex(" "))
-        if frame[4] == 0x42:
-            self.log.debug("[%s] V5_DATA: %s", self.serial, frame.hex(" "))
-            response_frame = self._v5_time_response_frame(frame)
-            self.log.debug("[%s] V5_DATA RESP: %s", self.serial, response_frame.hex(" "))
-        if frame[4] == 0x43:
-            self.log.debug("[%s] V5_WIFI: %s", self.serial, frame.hex(" "))
-            response_frame = self._v5_time_response_frame(frame)
-            self.log.debug("[%s] V5_WIFI RESP: %s", self.serial, response_frame.hex(" "))
-        if frame[4] == 0x47:
-            self.log.debug("[%s] V5_HEARTBEAT: %s", self.serial, frame.hex(" "))
-            response_frame = self._v5_time_response_frame(frame)
-            self.log.debug("[%s] V5_HEARTBEAT RESP: %s", self.serial, response_frame.hex(" "))
-        if response_frame:
+        if (response_frame := self._received_frame_response(frame)) is not None:
             try:
                 self.writer.write(response_frame)
                 await self.writer.drain()
@@ -192,10 +175,10 @@ class PySolarmanV5Async(PySolarmanV5):
                 if isinstance(e, OSError) and e.errno == errno.EHOSTUNREACH:
                     e = TimeoutError
                 self.log.debug(  # pylint: disable=logging-fstring-interpolation
-                    f"[{self.serial}] V5_HEARTBEAT error: {type(e).__name__}{f': {e}' if f'{e}' else ''}"
+                    f"[{self.serial}] V5_PROTOCOL error: {type(e).__name__}{f': {e}' if f'{e}' else ''}"
                 )
             except Exception as e:
-                self.log.exception("[%s] V5_HEARTBEAT error: %s", self.serial, e)
+                self.log.exception("[%s] V5_PROTOCOL error: %s", self.serial, e)
             return False
         return True
 

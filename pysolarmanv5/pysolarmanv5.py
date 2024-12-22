@@ -332,9 +332,9 @@ class PySolarmanV5:
             return False
         return True
 
-    def _handle_protocol_frame(self, frame):
+    def _received_frame_response(self, frame):
         """
-        Handles frames with control code 0x41 (handshake), 0x42 (data), 0x43 (wifi) and 0x47 (heartbeat).
+        Return response to frames with control codes 0x41 (handshake), 0x42 (data), 0x43 (wifi) and 0x47 (heartbeat).
         """
         response_frame = None
         if frame[4] == 0x41:
@@ -353,7 +353,17 @@ class PySolarmanV5:
             self.log.debug("[%s] V5_HEARTBEAT: %s", self.serial, frame.hex(" "))
             response_frame = self._v5_time_response_frame(frame)
             self.log.debug("[%s] V5_HEARTBEAT RESP: %s", self.serial, response_frame.hex(" "))
-        if response_frame:
+        if frame[4] == 0x48:
+            self.log.debug("[%s] V5_REPORT: %s", self.serial, frame.hex(" "))
+            response_frame = self._v5_time_response_frame(frame)
+            self.log.debug("[%s] V5_REPORT RESP: %s", self.serial, response_frame.hex(" "))
+        return response_frame
+
+    def _handle_protocol_frame(self, frame):
+        """
+        Handles frames with known control codes :func:`_received_frame_response() <pysolarmanv5.PySolarmanV5._received_frame_response>`
+        """
+        if (response_frame := self._received_frame_response(frame)) is not None:
             if self._reader_thr.is_alive():
                 self.sock.sendall(response_frame)
             return False
