@@ -1,12 +1,13 @@
 """pysolarmanv5.py"""
 
+import time
 import errno
 import queue
 import struct
 import socket
 import logging
-import selectors
 import platform
+import selectors
 
 from threading import Thread, Event
 from multiprocessing import Queue
@@ -299,9 +300,9 @@ class PySolarmanV5:
         return v5_response
 
     def _received_frame_is_valid(self, frame):
-        """Check that the frame is valid and that the serial number of the received
+        """
+        Check that the frame is valid and that the serial number of the received
         frame matches with the last sent one.
-        Ignore also any frames with control code 0x4710 (counter frame).
         """
         if not frame.startswith(self.v5_start):
             self.log.debug("[%s] V5_MISMATCH: %s", self.serial, frame.hex(" "))
@@ -309,8 +310,32 @@ class PySolarmanV5:
         if frame[5] != self.sequence_number:
             self.log.debug("[%s] V5_SEQ_NO_MISMATCH: %s", self.serial, frame.hex(" "))
             return False
+        return True
+
+    def _handle_protocol_frame(self, frame):
+        """
+        Handles protocol frames with control code 0x4710 (heartbeat frame).
+        """
         if frame.startswith(self.v5_start + b"\x01\x00\x10\x47"):
-            self.log.debug("[%s] COUNTER: %s", self.serial, frame.hex(" "))
+            self.log.debug("[%s] V5_HEARTBEAT: %s", self.serial, frame.hex(" "))
+            response_frame = bytearray(
+                self.v5_start
+                + struct.pack("<H", 10)
+                + frame[3:5]
+                + frame[5:7]
+                + self.v5_loggerserial
+                + struct.pack("<H", 0x0100)
+                + struct.pack("<I", int(time.time()))
+                + struct.pack("<I", 0)
+                + self.v5_checksum
+                + self.v5_end
+            )
+            response_frame[4] = response_frame[4] - 0x30
+            response_frame[5] = (response_frame[5] + 1) & 0xFF
+            response_frame[-2] = self._calculate_v5_frame_checksum(response_frame)
+            self.log.debug("[%s] V5_HEARTBEAT RESP: %s", self.serial, response_frame.hex(" "))
+            if self._reader_thr.is_alive():
+                self.sock.sendall(response_frame)
             return False
         return True
 
@@ -349,6 +374,8 @@ class PySolarmanV5:
                         self._reconnect()
                     return
                 if not self._received_frame_is_valid(data):
+                    continue
+                if not self._handle_protocol_frame(data):
                     continue
                 if self._data_wanted.is_set():
                     self._data_queue.put(data, timeout=self.socket_timeout)
