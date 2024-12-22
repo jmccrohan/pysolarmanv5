@@ -334,12 +334,19 @@ class PySolarmanV5:
 
     def _handle_protocol_frame(self, frame):
         """
-        Handles protocol frames with control code 0x4710 (heartbeat frame).
+        Handles protocol frames with control code 0x4110 (handshake) and 0x4710 (heartbeat).
         """
+        response_frame = None
+
+        if frame[4] == 0x41:
+            self.log.debug("[%s] V5_HANDSHAKE: %s", self.serial, frame.hex(" "))
+            response_frame = self._v5_time_response_frame(frame)
+            self.log.debug("[%s] V5_HANDSHAKE RESP: %s", self.serial, response_frame.hex(" "))
         if frame.startswith(self.v5_start + b"\x01\x00\x10\x47"):
             self.log.debug("[%s] V5_HEARTBEAT: %s", self.serial, frame.hex(" "))
             response_frame = self._v5_time_response_frame(frame)
             self.log.debug("[%s] V5_HEARTBEAT RESP: %s", self.serial, response_frame.hex(" "))
+        if response_frame:
             if self._reader_thr.is_alive():
                 self.sock.sendall(response_frame)
             return False
