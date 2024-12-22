@@ -266,7 +266,7 @@ class PySolarmanV5:
 
         return modbus_frame
 
-    def _v5_heartbeat_response_frame(self, heartbeat_frame):
+    def _v5_time_response_frame(self, heartbeat_frame):
         """
         Creates response to 0x4710 (heartbeat frame)
         """
@@ -338,7 +338,7 @@ class PySolarmanV5:
         """
         if frame.startswith(self.v5_start + b"\x01\x00\x10\x47"):
             self.log.debug("[%s] V5_HEARTBEAT: %s", self.serial, frame.hex(" "))
-            response_frame = self._v5_heartbeat_response_frame(frame)
+            response_frame = self._v5_time_response_frame(frame)
             self.log.debug("[%s] V5_HEARTBEAT RESP: %s", self.serial, response_frame.hex(" "))
             if self._reader_thr.is_alive():
                 self.sock.sendall(response_frame)
