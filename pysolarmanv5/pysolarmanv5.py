@@ -266,14 +266,14 @@ class PySolarmanV5:
 
         return modbus_frame
 
-    def _v5_time_response_frame(self, heartbeat_frame):
+    def _v5_time_response_frame(self, frame):
         """
         Creates response to 0x4710 (heartbeat frame)
         """
         response_frame = bytearray(
             self.v5_start
             + struct.pack("<H", 10)
-            + heartbeat_frame[3:7]
+            + frame[3:7]
             + self.v5_loggerserial
             + struct.pack("<H", 0x0100)
             + struct.pack("<I", int(time.time()))
