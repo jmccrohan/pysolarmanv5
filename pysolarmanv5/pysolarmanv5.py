@@ -268,7 +268,7 @@ class PySolarmanV5:
 
     def _v5_time_response_frame(self, frame):
         """
-        Creates response to 0x4710 (heartbeat frame)
+        Creates time response frame
         """
         response_frame = bytearray(
             self.v5_start
@@ -334,7 +334,7 @@ class PySolarmanV5:
 
     def _received_frame_response(self, frame):
         """
-        Return response to frames with control codes 0x41 (handshake), 0x42 (data), 0x43 (wifi) and 0x47 (heartbeat).
+        Return response to frames with control codes 0x41 (handshake), 0x42 (data), 0x43 (wifi), 0x47 (heartbeat) and 0x48 (report)
         """
         do_continue = True
         response_frame = None
