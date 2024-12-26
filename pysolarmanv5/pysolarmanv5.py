@@ -232,7 +232,7 @@ class PySolarmanV5:
 
         v5_frame = v5_header + v5_payload + self._v5_trailer()
 
-        v5_frame[len(v5_frame) - 2] = self._calculate_v5_frame_checksum(v5_frame)
+        v5_frame[-2] = self._calculate_v5_frame_checksum(v5_frame)
         return v5_frame
 
     def _v5_frame_decoder(self, v5_frame) -> bytearray:
@@ -277,10 +277,10 @@ class PySolarmanV5:
                 frame_len = frame_len_without_payload_len + payload_len
 
         if (v5_frame[0] != int.from_bytes(self.v5_start, byteorder="big")) or (
-            v5_frame[frame_len - 1] != int.from_bytes(self.v5_end, byteorder="big")
+            v5_frame[-1] != int.from_bytes(self.v5_end, byteorder="big")
         ):
             raise V5FrameError("V5 frame contains invalid start or end values")
-        if v5_frame[frame_len - 2] != self._calculate_v5_frame_checksum(v5_frame):
+        if v5_frame[-2] != self._calculate_v5_frame_checksum(v5_frame):
             raise V5FrameError("V5 frame contains invalid V5 checksum")
         if v5_frame[5] != self.sequence_number:
             raise V5FrameError("V5 frame contains invalid sequence number")
@@ -291,7 +291,7 @@ class PySolarmanV5:
         if v5_frame[11] != int("02", 16):
             raise V5FrameError("V5 frame contains invalid frametype")
 
-        modbus_frame = v5_frame[25 : frame_len - 2]
+        modbus_frame = v5_frame[25:-2]
 
         if len(modbus_frame) < 5:
             if len(modbus_frame) > 0 and (
