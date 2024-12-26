@@ -123,8 +123,8 @@ class PySolarmanV5:
         self.v5_length = bytes.fromhex("0000")  # placeholder value
         self.v5_magic = bytes.fromhex("10")
         self.v5_control_codes = CONTROL.__dict__.values()
-        self.v5_serial = bytes.fromhex("0000")  # placeholder value
-        self.v5_loggerserial = struct.pack("<I", self.serial)
+        self.v5_seq = bytes.fromhex("0000")  # placeholder value
+        self.v5_serial = struct.pack("<I", self.serial)
         self.v5_frametype = bytes.fromhex("02")
         self.v5_sensortype = bytes.fromhex("0000")
         self.v5_deliverytime = bytes.fromhex("00000000")
@@ -179,7 +179,7 @@ class PySolarmanV5:
             + self.v5_magic
             + struct.pack("<B", control)
             + seq
-            + self.v5_loggerserial
+            + self.v5_serial
         )
 
     def _v5_trailer(self) -> bytearray:
@@ -217,9 +217,9 @@ class PySolarmanV5:
         """
         length = 15 + len(modbus_frame)
         self.v5_length = struct.pack("<H", length)
-        self.v5_serial = struct.pack("<H", self._get_next_sequence_number())
+        self.v5_seq = struct.pack("<H", self._get_next_sequence_number())
 
-        v5_header = self._v5_header(length, CONTROL.REQUEST, self.v5_serial)
+        v5_header = self._v5_header(length, CONTROL.REQUEST, self.v5_seq)
 
         v5_payload = bytearray(
             self.v5_frametype
@@ -284,7 +284,7 @@ class PySolarmanV5:
             raise V5FrameError("V5 frame contains invalid V5 checksum")
         if v5_frame[5] != self.sequence_number:
             raise V5FrameError("V5 frame contains invalid sequence number")
-        if v5_frame[7:11] != self.v5_loggerserial:
+        if v5_frame[7:11] != self.v5_serial:
             raise V5FrameError("V5 frame contains incorrect data logger serial number")
         if v5_frame[4] != self._get_response_code(CONTROL.REQUEST):
             raise V5FrameError("V5 frame contains incorrect control code")
