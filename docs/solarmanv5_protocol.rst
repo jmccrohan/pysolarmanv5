@@ -32,18 +32,26 @@ The Header is always 11 bytes and is composed of:
 
 * **Start** (*one byte*) – Denotes the start of the V5 frame. Always ``0xA5``.
 * **Length** (*two bytes*) – :ref:`Payload` length
-* **Control Code** (*two bytes*) – Describes the type of V5 frame.
-  For Modbus RTU requests, the control code is ``0x4510``.
-  For Modbus RTU responses, the control code is ``0x1510``.
-* **Serial** (*two bytes*) – This field acts as a two-way sequence number. On
+* **Control Code** (*two bytes*) – Describes the type of V5 frame:
+
+  * HANDSHAKE ``0x4110``, used for initial handshake in server mode
+  * DATA ``0x4210``, used for sending data in server mode
+  * INFO ``0x4310``, used for sending stick fw, ip and ssid info in server mode
+  * REQUEST ``0x4510``, for Modbus RTU requests in client mode
+
+    * RESPONSE ``0x1510``, for Modbus RTU responses in client mode
+  * HEARTBEAT ``0x4710``, keepalive packets in both modes
+  * *REPORT* ``0x4810``
+  *Responses are described as* ``request code - 0x3000`` *which can be seen in
+  Modbus RTU response - request pair:* ``0x4510 - 0x3000 = 0x1510``
+* **Sequence Number** (*two bytes*) – This field acts as a two-way sequence number. On
   outgoing requests, the first byte of this field is echoed back in the same
   position on incoming responses. pysolarmanv5 expoits this property to detect
   invalid responses. This is done by initialising this byte to a random value,
   and incrementing for each subsequent request.
   The second byte is incremented by the data logging stick for every response
   sent (either to Solarman Cloud or local requests).
-* **Logger Serial** (*four bytes*) – Serial number of Solarman data logging
-  stick
+* **Serial Number** (*four bytes*) – Serial number of data logging stick
 
 Payload
 ^^^^^^^
