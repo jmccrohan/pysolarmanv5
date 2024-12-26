@@ -153,7 +153,7 @@ class PySolarmanV5Async(PySolarmanV5):
             self.reader = None
             self.writer = None
 
-    def _socket_setup(self, *args, **kwargs):
+    def _socket_setup(self, *args, **kwargs) -> None:
         """Socket setup method
 
         PySolarmanV5Async handles socket creation separately to base
@@ -161,7 +161,7 @@ class PySolarmanV5Async(PySolarmanV5):
 
         """
 
-    def _send_data(self, data: bytes):
+    def _send_data(self, data: bytes) -> None:
         """
         Sends the data received from the socket to the receiver.
 
@@ -175,7 +175,7 @@ class PySolarmanV5Async(PySolarmanV5):
             self.data_queue.put_nowait(data)
             self.data_wanted_ev.clear()
 
-    async def _handle_protocol_frame(self, frame):
+    async def _handle_protocol_frame(self, frame: bytes) -> bool:
         """
         Handles frames with known control codes :func:`_received_frame_response() <pysolarmanv5.PySolarmanV5._received_frame_response>`
         """
