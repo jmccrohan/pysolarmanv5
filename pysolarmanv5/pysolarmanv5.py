@@ -279,7 +279,7 @@ class PySolarmanV5:
             raise V5FrameError("V5 frame contains invalid sequence number")
         if v5_frame[7:11] != self.v5_loggerserial:
             raise V5FrameError("V5 frame contains incorrect data logger serial number")
-        if v5_frame[3] != self.v5_magic or v5_frame[4] != self._get_response_code(CONTROL.REQUEST):
+        if v5_frame[4] != self._get_response_code(CONTROL.REQUEST):
             raise V5FrameError("V5 frame contains incorrect control code")
         if v5_frame[11] != int("02", 16):
             raise V5FrameError("V5 frame contains invalid frametype")
