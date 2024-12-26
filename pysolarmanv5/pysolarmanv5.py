@@ -122,6 +122,7 @@ class PySolarmanV5:
         self.v5_start = bytes.fromhex("A5")
         self.v5_length = bytes.fromhex("0000")  # placeholder value
         self.v5_magic = bytes.fromhex("10")
+        self.v5_control_codes = CONTROL.__dict__.values()
         self.v5_serial = bytes.fromhex("0000")  # placeholder value
         self.v5_loggerserial = struct.pack("<I", self.serial)
         self.v5_frametype = bytes.fromhex("02")
@@ -370,31 +371,12 @@ class PySolarmanV5:
         """
         do_continue = True
         response_frame = None
-        if frame[4] == CONTROL.HANDSHAKE:
-            do_continue = False
-            self.log.debug("[%s] V5_HANDSHAKE: %s", self.serial, frame.hex(" "))
+        if frame[4] != CONTROL.REQUEST and frame[4] in self.v5_control_codes:
+            control_name = [i for i in CONTROL.__dict__ if CONTROL.__dict__[i]==frame[4]][0]
+            self.log.debug("[%s] V5_%s: %s", self.serial, control_name, frame.hex(" "))
             response_frame = self._v5_time_response_frame(frame)
-            self.log.debug("[%s] V5_HANDSHAKE RESP: %s", self.serial, response_frame.hex(" "))
-        if frame[4] == CONTROL.DATA:
-            do_continue = False # Maybe True and thus process the packet in the future?
-            self.log.debug("[%s] V5_DATA: %s", self.serial, frame.hex(" "))
-            response_frame = self._v5_time_response_frame(frame)
-            self.log.debug("[%s] V5_DATA RESP: %s", self.serial, response_frame.hex(" "))
-        if frame[4] == CONTROL.INFO:
-            do_continue = False
-            self.log.debug("[%s] V5_INFO: %s", self.serial, frame.hex(" "))
-            response_frame = self._v5_time_response_frame(frame)
-            self.log.debug("[%s] V5_INFO RESP: %s", self.serial, response_frame.hex(" "))
-        if frame[4] == CONTROL.HEARTBEAT:
-            do_continue = False
-            self.log.debug("[%s] V5_HEARTBEAT: %s", self.serial, frame.hex(" "))
-            response_frame = self._v5_time_response_frame(frame)
-            self.log.debug("[%s] V5_HEARTBEAT RESP: %s", self.serial, response_frame.hex(" "))
-        if frame[4] == CONTROL.REPORT:
-            do_continue = False
-            self.log.debug("[%s] V5_REPORT: %s", self.serial, frame.hex(" "))
-            response_frame = self._v5_time_response_frame(frame)
-            self.log.debug("[%s] V5_REPORT RESP: %s", self.serial, response_frame.hex(" "))
+            self.log.debug("[%s] V5_%s RESP: %s", self.serial, control_name, response_frame.hex(" "))
+            # Maybe do_continue = True for CONTROL.DATA|INFO|REPORT and thus process packets in the future?
         return do_continue, response_frame
 
     def _handle_protocol_frame(self, frame) -> bool:
