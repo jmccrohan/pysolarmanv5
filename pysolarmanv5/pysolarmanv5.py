@@ -174,6 +174,13 @@ class PySolarmanV5:
             + self.v5_loggerserial
         )
 
+    def _get_response_code(self, control):
+        """
+        Get response control code from request control code
+        
+        """
+        return control - 0x30
+
     def _get_next_sequence_number(self):
         """
         Get the next sequence number for use in outgoing packets
@@ -272,7 +279,7 @@ class PySolarmanV5:
             raise V5FrameError("V5 frame contains invalid sequence number")
         if v5_frame[7:11] != self.v5_loggerserial:
             raise V5FrameError("V5 frame contains incorrect data logger serial number")
-        if v5_frame[3] != self.v5_magic or v5_frame[4] != CONTROL.REQUEST - 0x30:
+        if v5_frame[3] != self.v5_magic or v5_frame[4] != self._get_response_code(CONTROL.REQUEST):
             raise V5FrameError("V5 frame contains incorrect control code")
         if v5_frame[11] != int("02", 16):
             raise V5FrameError("V5 frame contains invalid frametype")
@@ -293,14 +300,13 @@ class PySolarmanV5:
         Creates time response frame
 
         """
-        response_frame = self._v5_header(10, frame[4], frame[5:7]) + bytearray(
+        response_frame = self._v5_header(10, self._get_response_code(frame[4]), frame[5:7]) + bytearray(
             + struct.pack("<H", 0x0100) # Frame & sensor type?
             + struct.pack("<I", int(time.time()))
             + struct.pack("<I", 0) # Offset?
             + self.v5_checksum
             + self.v5_end
         )
-        response_frame[4] = response_frame[4] - 0x30
         response_frame[5] = (response_frame[5] + 1) & 0xFF
         response_frame[-2] = self._calculate_v5_frame_checksum(response_frame)
         return response_frame
