@@ -144,7 +144,15 @@ class PySolarmanV5:
         self._socket_setup(kwargs.get("socket"), kwargs.get("auto_reconnect", False))
 
     @staticmethod
-    def _calculate_v5_frame_checksum(frame):
+    def _get_response_code(code) -> int:
+        """
+        Get response control code from request control code
+        
+        """
+        return code - 0x30
+
+    @staticmethod
+    def _calculate_v5_frame_checksum(frame) -> int:
         """
         Calculate checksum on all frame bytes except head, end and checksum
 
@@ -179,13 +187,6 @@ class PySolarmanV5:
 
         """
         return bytearray(self.v5_checksum + self.v5_end)
-
-    def _get_response_code(self, control) -> int:
-        """
-        Get response control code from request control code
-        
-        """
-        return control - 0x30
 
     def _get_next_sequence_number(self) -> int:
         """
