@@ -122,7 +122,6 @@ class PySolarmanV5:
         self.v5_start = bytes.fromhex("A5")
         self.v5_length = bytes.fromhex("0000")  # placeholder value
         self.v5_magic = bytes.fromhex("10")
-        self.v5_control = struct.pack("<B", CONTROL.REQUEST)
         self.v5_serial = bytes.fromhex("0000")  # placeholder value
         self.v5_loggerserial = struct.pack("<I", self.serial)
         self.v5_frametype = bytes.fromhex("02")
@@ -207,10 +206,11 @@ class PySolarmanV5:
         :rtype: bytearray
 
         """
-        self.v5_length = struct.pack("<H", 15 + len(modbus_frame))
+        length = 15 + len(modbus_frame)
+        self.v5_length = struct.pack("<H", length)
         self.v5_serial = struct.pack("<H", self._get_next_sequence_number())
 
-        v5_header = self._v5_header(15 + len(modbus_frame), self.v5_control, self.v5_serial)
+        v5_header = self._v5_header(length, CONTROL.REQUEST, self.v5_serial)
 
         v5_payload = bytearray(
             self.v5_frametype
