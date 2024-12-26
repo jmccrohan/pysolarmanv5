@@ -159,6 +159,20 @@ class PySolarmanV5:
             checksum += frame[i] & 0xFF
         return int(checksum & 0xFF)
 
+    def _v5_header(self, length: int, control: int, seq: bytes) -> bytes:
+        """
+        Construct V5 header
+        
+        """
+        return bytearray(
+            self.v5_start
+            + struct.pack("<H", length)
+            + self.v5_magic
+            + struct.pack("<B", control)
+            + seq
+            + self.v5_loggerserial
+        )
+
     def _get_next_sequence_number(self):
         """Get the next sequence number for use in outgoing packets
 
@@ -187,13 +201,7 @@ class PySolarmanV5:
         self.v5_length = struct.pack("<H", 15 + len(modbus_frame))
         self.v5_serial = struct.pack("<H", self._get_next_sequence_number())
 
-        v5_header = bytearray(
-            self.v5_start
-            + self.v5_length
-            + self.v5_control
-            + self.v5_serial
-            + self.v5_loggerserial
-        )
+        v5_header = self._v5_header(15 + len(modbus_frame), self.v5_control, self.v5_serial)
 
         v5_payload = bytearray(
             self.v5_frametype
@@ -281,14 +289,10 @@ class PySolarmanV5:
         """
         Creates time response frame
         """
-        response_frame = bytearray(
-            self.v5_start
-            + struct.pack("<H", 10)
-            + frame[3:7]
-            + self.v5_loggerserial
-            + struct.pack("<H", 0x0100)
+        response_frame = self._v5_header(10, frame[4], frame[5:7]) + bytearray(
+            + struct.pack("<H", 0x0100) # Frame & sensor type?
             + struct.pack("<I", int(time.time()))
-            + struct.pack("<I", 0)
+            + struct.pack("<I", 0) # Offset?
             + self.v5_checksum
             + self.v5_end
         )
