@@ -27,6 +27,7 @@ CONTROL = types.SimpleNamespace()
 CONTROL.HANDSHAKE = 0x41
 CONTROL.DATA = 0x42
 CONTROL.INFO = 0x43
+CONTROL.REQUEST = 0x45
 CONTROL.HEARTBEAT = 0x47
 CONTROL.REPORT = 0x48
 
@@ -120,7 +121,8 @@ class PySolarmanV5:
         # Define and construct V5 request frame structure.
         self.v5_start = bytes.fromhex("A5")
         self.v5_length = bytes.fromhex("0000")  # placeholder value
-        self.v5_controlcode = struct.pack("<H", 0x4510)
+        self.v5_magic = bytes.fromhex("10")
+        self.v5_control = struct.pack("<B", CONTROL.REQUEST)
         self.v5_serial = bytes.fromhex("0000")  # placeholder value
         self.v5_loggerserial = struct.pack("<I", self.serial)
         self.v5_frametype = bytes.fromhex("02")
@@ -188,7 +190,7 @@ class PySolarmanV5:
         v5_header = bytearray(
             self.v5_start
             + self.v5_length
-            + self.v5_controlcode
+            + self.v5_control
             + self.v5_serial
             + self.v5_loggerserial
         )
@@ -259,7 +261,7 @@ class PySolarmanV5:
             raise V5FrameError("V5 frame contains invalid sequence number")
         if v5_frame[7:11] != self.v5_loggerserial:
             raise V5FrameError("V5 frame contains incorrect data logger serial number")
-        if v5_frame[3:5] != struct.pack("<H", 0x1510):
+        if v5_frame[3] != self.v5_magic and v5_frame[4] != CONTROL.REQUEST - 0x30:
             raise V5FrameError("V5 frame contains incorrect control code")
         if v5_frame[11] != int("02", 16):
             raise V5FrameError("V5 frame contains invalid frametype")
