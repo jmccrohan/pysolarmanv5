@@ -3,6 +3,7 @@
 import time
 import errno
 import queue
+import types
 import struct
 import socket
 import logging
@@ -20,6 +21,14 @@ from umodbus.exceptions import error_code_to_exception_map
 
 
 _WIN_PLATFORM = platform.system() == "Windows"
+
+
+CONTROL = types.SimpleNamespace()
+CONTROL.HANDSHAKE = 0x41
+CONTROL.DATA = 0x42
+CONTROL.INFO = 0x43
+CONTROL.HEARTBEAT = 0x47
+CONTROL.REPORT = 0x48
 
 
 class V5FrameError(Exception):
@@ -338,27 +347,27 @@ class PySolarmanV5:
         """
         do_continue = True
         response_frame = None
-        if frame[4] == 0x41:
+        if frame[4] == CONTROL.HANDSHAKE:
             do_continue = False
             self.log.debug("[%s] V5_HANDSHAKE: %s", self.serial, frame.hex(" "))
             response_frame = self._v5_time_response_frame(frame)
             self.log.debug("[%s] V5_HANDSHAKE RESP: %s", self.serial, response_frame.hex(" "))
-        if frame[4] == 0x42:
+        if frame[4] == CONTROL.DATA:
             do_continue = False # Maybe True and thus process the packet in the future?
             self.log.debug("[%s] V5_DATA: %s", self.serial, frame.hex(" "))
             response_frame = self._v5_time_response_frame(frame)
             self.log.debug("[%s] V5_DATA RESP: %s", self.serial, response_frame.hex(" "))
-        if frame[4] == 0x43:
+        if frame[4] == CONTROL.INFO:
             do_continue = False
-            self.log.debug("[%s] V5_WIFI: %s", self.serial, frame.hex(" "))
+            self.log.debug("[%s] V5_INFO: %s", self.serial, frame.hex(" "))
             response_frame = self._v5_time_response_frame(frame)
-            self.log.debug("[%s] V5_WIFI RESP: %s", self.serial, response_frame.hex(" "))
-        if frame[4] == 0x47:
+            self.log.debug("[%s] V5_INFO RESP: %s", self.serial, response_frame.hex(" "))
+        if frame[4] == CONTROL.HEARTBEAT:
             do_continue = False
             self.log.debug("[%s] V5_HEARTBEAT: %s", self.serial, frame.hex(" "))
             response_frame = self._v5_time_response_frame(frame)
             self.log.debug("[%s] V5_HEARTBEAT RESP: %s", self.serial, response_frame.hex(" "))
-        if frame[4] == 0x48:
+        if frame[4] == CONTROL.REPORT:
             do_continue = False
             self.log.debug("[%s] V5_REPORT: %s", self.serial, frame.hex(" "))
             response_frame = self._v5_time_response_frame(frame)
