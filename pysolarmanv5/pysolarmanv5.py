@@ -216,6 +216,7 @@ class PySolarmanV5:
 
         """
         length = 15 + len(modbus_frame)
+
         self.v5_length = struct.pack("<H", length)
         self.v5_seq = struct.pack("<H", self._get_next_sequence_number())
 
@@ -231,7 +232,6 @@ class PySolarmanV5:
         )
 
         v5_frame = v5_header + v5_payload + self._v5_trailer()
-
         v5_frame[-2] = self._calculate_v5_frame_checksum(v5_frame)
         return v5_frame
 
