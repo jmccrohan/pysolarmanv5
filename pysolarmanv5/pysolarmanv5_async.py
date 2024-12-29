@@ -57,28 +57,43 @@ class PySolarmanV5Async(PySolarmanV5):
     def __init__(self, address, serial, **kwargs):
         """Constructor"""
         super().__init__(address, serial, **kwargs)
-        self._needs_reconnect = kwargs.get("auto_reconnect", False)
         """ Auto-reconnect feature """
+        self._needs_reconnect = kwargs.get("auto_reconnect", False)
+        self.reader_task: asyncio.Task = None  # noqa
         self.reader: asyncio.StreamReader = None  # noqa
         self.writer: asyncio.StreamWriter = None  # noqa
         self.data_queue = asyncio.Queue(maxsize=1)
         self.data_wanted_ev = Event()
-        self.reader_task: asyncio.Task = None  # noqa
+
+    async def _connect(self) -> None:
+        """
+        Common connect to the data logging stick and start the reader loop flow
+
+        :return: None
+
+        """
+        try:
+            if self.reader_task:
+                self.reader_task.cancel()
+            self.reader, self.writer = await asyncio.wait_for(
+                asyncio.open_connection(self.address, self.port), self.socket_timeout
+            )
+            loop = asyncio.get_running_loop()
+            self.reader_task = loop.create_task(self._conn_keeper(), name="ConnKeeper")
+        except:
+            self.reader_task = None
+            raise
 
     async def connect(self) -> None:
         """
-        Connect to the data logging stick and start the socket reader loop
+        Connect to the data logging stick
 
         :return: None
         :raises NoSocketAvailableError: When connection cannot be established
 
         """
         try:
-            self.reader, self.writer = await asyncio.wait_for(
-                asyncio.open_connection(self.address, self.port), self.socket_timeout
-            )
-            loop = asyncio.get_running_loop()
-            self.reader_task = loop.create_task(self._conn_keeper(), name="ConnKeeper")
+            await self._connect()
         except Exception as e:  # pylint: disable=broad-exception-caught
             raise NoSocketAvailableError(
                 f"Cannot open connection to {self.address}"
@@ -93,13 +108,7 @@ class PySolarmanV5Async(PySolarmanV5):
 
         """
         try:
-            if self.reader_task:
-                self.reader_task.cancel()
-            self.reader, self.writer = await asyncio.wait_for(
-                asyncio.open_connection(self.address, self.port), self.socket_timeout
-            )
-            loop = asyncio.get_running_loop()
-            self.reader_task = loop.create_task(self._conn_keeper(), name="ConnKeeper")
+            await self._connect()
             self.log.debug("[%s] Successful reconnect", self.serial)
             if self.data_wanted_ev.is_set():
                 self.log.debug(
