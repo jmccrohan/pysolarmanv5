@@ -372,11 +372,12 @@ class PySolarmanV5:
         do_continue = True
         response_frame = None
         if frame[4] != CONTROL.REQUEST and frame[4] in self.v5_control_codes:
+            do_continue = False
+            # Maybe do_continue = True for CONTROL.DATA|INFO|REPORT and thus process packets in the future?
             control_name = [i for i in CONTROL.__dict__ if CONTROL.__dict__[i]==frame[4]][0]
             self.log.debug("[%s] V5_%s: %s", self.serial, control_name, frame.hex(" "))
             response_frame = self._v5_time_response_frame(frame)
             self.log.debug("[%s] V5_%s RESP: %s", self.serial, control_name, response_frame.hex(" "))
-            # Maybe do_continue = True for CONTROL.DATA|INFO|REPORT and thus process packets in the future?
         return do_continue, response_frame
 
     def _handle_protocol_frame(self, frame: bytes) -> bool:
