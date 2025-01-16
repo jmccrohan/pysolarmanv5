@@ -273,6 +273,60 @@ Response Frame Format
 	      264-271: End (0x15)\n(1 byte)
 	   }
 
+Response Frame Format (Server)
+""""""""""""""""""""""""""""""
+.. container:: only-dark
+
+    .. packetdiag::
+
+        packetdiag {
+	      colwidth = 32
+	      scale_interval = 8
+	      node_height = 32
+	      default_node_color = none
+	      default_linecolor = white
+	      default_textcolor = white
+	      default_fontsize = 10
+
+	      0-7: Start (0xA5)\n(1 byte)
+	      8-23: Length\n(2 bytes)
+	      24-39: Control Code (0x10XX)\n(2 bytes)
+	      40-55: Sequence Numbers\n(2 bytes)
+	      56-87: Logger Serial\n(4 bytes)
+	      88-95: Frame Type (0x02)\n(1 byte)
+	      96-103: Status (0x01)\n(1 byte)
+	      104-135: UNIX Timestamp\n(4 bytes)
+	      136-167: TZ Offset (in minutes)\n(4 bytes)
+	      168-175: V5 checksum\n(1 byte)
+	      176-183: End (0x15)\n(1 byte)
+	   }
+
+.. container:: only-light
+
+    .. packetdiag::
+
+        packetdiag {
+	      colwidth = 32
+	      scale_interval = 8
+	      node_height = 32
+	      default_node_color = none
+	      default_linecolor = black
+	      default_textcolor = black
+	      default_fontsize = 10
+
+	      0-7: Start (0xA5)\n(1 byte)
+	      8-23: Length\n(2 bytes)
+	      24-39: Control Code (0x10XX)\n(2 bytes)
+	      40-55: Sequence Numbers\n(2 bytes)
+	      56-87: Logger Serial\n(4 bytes)
+	      88-95: Frame Type (0x02)\n(1 byte)
+	      96-103: Status (0x01)\n(1 byte)
+	      104-135: UNIX Timestamp\n(4 bytes)
+	      136-167: TZ Offset (in minutes)\n(4 bytes)
+	      168-175: V5 checksum\n(1 byte)
+	      176-183: End (0x15)\n(1 byte)
+	   }
+
 
 Further reading
 ^^^^^^^^^^^^^^^
