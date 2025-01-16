@@ -121,8 +121,8 @@ class ServerHandler(socketserver.BaseRequestHandler):
                 self.sol.sequence_number = data[5]
                 log.debug(f"[SrvHandler] RECD: {data}")
                 data = bytearray(data)
-                data[3] = struct.pack("<B", 0x10)
-                data[4] = struct.pack("<B", PySolarmanV5._get_response_code(CONTROL_CODE.REQUEST))
+                data[3] = 0x10
+                data[4] = PySolarmanV5._get_response_code(CONTROL_CODE.REQUEST)
                 try:
                     checksum = self.sol._calculate_v5_frame_checksum(bytes(data))
                 except:
@@ -180,8 +180,8 @@ async def stream_handler(reader: asyncio.StreamReader, writer: asyncio.StreamWri
             sol.sequence_number = data[5]
             log.debug(f"[AioHandler] RECD: {data}")
             data = bytearray(data)
-            data[3] = struct.pack("<B", 0x10)
-            data[4] = struct.pack("<B", PySolarmanV5._get_response_code(CONTROL_CODE.REQUEST))
+            data[3] = 0x10
+            data[4] = PySolarmanV5._get_response_code(CONTROL_CODE.REQUEST)
             try:
                 checksum = sol._calculate_v5_frame_checksum(bytes(data))
             except:
