@@ -1,8 +1,12 @@
+import struct
 import socket
 import threading
+import socketserver
+import asyncio
+import random
+import logging
+import platform
 
-from pysolarmanv5 import *
-import struct
 from umodbus.client.serial.redundancy_check import add_crc
 from umodbus.functions import (
     ReadHoldingRegisters,
@@ -10,11 +14,8 @@ from umodbus.functions import (
     ReadCoils,
     create_function_from_request_pdu,
 )
-import socketserver
-import asyncio
-import random
-import logging
-import platform
+
+from ..pysolarmanv5.pysolarmanv5 import CONTROL_CODE, PySolarmanV5
 
 
 _WIN_PLATFORM = True if platform.system() == "Windows" else False
