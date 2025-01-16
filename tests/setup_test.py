@@ -1,7 +1,7 @@
 import socket
 import threading
 
-from pysolarmanv5 import CONTROL, PySolarmanV5
+from pysolarmanv5 import *
 import struct
 from umodbus.client.serial.redundancy_check import add_crc
 from umodbus.functions import (
