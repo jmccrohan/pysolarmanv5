@@ -82,7 +82,7 @@ class MockDatalogger(PySolarmanV5):
             "<BB", self.sequence_number, self._get_next_sequence_number()
         )
 
-        v5_header = self._v5_header(length, self._get_response_code(CONTROL.REQUEST), self.v5_seq)
+        v5_header = self._v5_header(length, self._get_response_code(CONTROL_CODE.REQUEST), self.v5_seq)
 
         v5_payload = bytearray(
             self.v5_frametype
@@ -121,7 +121,7 @@ class ServerHandler(socketserver.BaseRequestHandler):
                 log.debug(f"[SrvHandler] RECD: {data}")
                 data = bytearray(data)
                 data[3] = struct.pack("<B", 0x10)
-                data[4] = struct.pack("<B", PySolarmanV5._get_response_code(CONTROL.REQUEST))
+                data[4] = struct.pack("<B", PySolarmanV5._get_response_code(CONTROL_CODE.REQUEST))
                 try:
                     checksum = self.sol._calculate_v5_frame_checksum(bytes(data))
                 except:
@@ -180,7 +180,7 @@ async def stream_handler(reader: asyncio.StreamReader, writer: asyncio.StreamWri
             log.debug(f"[AioHandler] RECD: {data}")
             data = bytearray(data)
             data[3] = struct.pack("<B", 0x10)
-            data[4] = struct.pack("<B", PySolarmanV5._get_response_code(CONTROL.REQUEST))
+            data[4] = struct.pack("<B", PySolarmanV5._get_response_code(CONTROL_CODE.REQUEST))
             try:
                 checksum = sol._calculate_v5_frame_checksum(bytes(data))
             except:
