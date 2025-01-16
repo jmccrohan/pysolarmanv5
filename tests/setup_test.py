@@ -15,7 +15,7 @@ from umodbus.functions import (
     create_function_from_request_pdu,
 )
 
-from ..pysolarmanv5.pysolarmanv5 import CONTROL_CODE, PySolarmanV5
+from pysolarmanv5.pysolarmanv5 import CONTROL_CODE, PySolarmanV5
 
 
 _WIN_PLATFORM = True if platform.system() == "Windows" else False
