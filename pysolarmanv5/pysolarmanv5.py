@@ -153,6 +153,22 @@ class PySolarmanV5:
         return code - 0x30
 
     @staticmethod
+    def _calculate_checksum(data: bytes) -> int:
+        """
+        Calculate checksum on all bytes
+
+        :param data: payload
+        :type data: bytes
+        :return: Checksum value of all bytes
+        :rtype: int
+
+        """
+        checksum = 0
+        for d in data:
+            checksum += d & 0xFF
+        return int(checksum & 0xFF)
+
+    @staticmethod
     def _calculate_v5_frame_checksum(frame: bytes) -> int:
         """
         Calculate checksum on all frame bytes except head, end and checksum
@@ -163,10 +179,7 @@ class PySolarmanV5:
         :rtype: int
 
         """
-        checksum = 0
-        for i in range(1, len(frame) - 2, 1):
-            checksum += frame[i] & 0xFF
-        return int(checksum & 0xFF)
+        return PySolarmanV5._calculate_checksum(frame[1:-2])
 
     def _v5_header(self, length: int, control: int, seq: bytes) -> bytearray:
         """
@@ -182,12 +195,12 @@ class PySolarmanV5:
             + self.v5_serial
         )
 
-    def _v5_trailer(self) -> bytearray:
+    def _v5_trailer(self, payload: bytes) -> bytearray:
         """
         Construct V5 trailer
 
         """
-        return bytearray(self.v5_checksum + self.v5_end)
+        return bytearray(struct.pack("<B", self._calculate_checksum(payload[1:])) + self.v5_end)
 
     def _get_next_sequence_number(self) -> int:
         """
@@ -231,9 +244,8 @@ class PySolarmanV5:
             + modbus_frame
         )
 
-        v5_frame = v5_header + v5_payload + self._v5_trailer()
-        v5_frame[-2] = self._calculate_v5_frame_checksum(v5_frame)
-        return v5_frame
+        v5_frame = v5_header + v5_payload
+        return v5_frame + self._v5_trailer(v5_frame)
 
     def _v5_frame_decoder(self, v5_frame: bytes) -> bytearray:
         """
@@ -311,10 +323,9 @@ class PySolarmanV5:
             + struct.pack("<H", 0x0100) # Frame & sensor type?
             + struct.pack("<I", int(time.time()))
             + struct.pack("<I", 0) # Offset?
-        ) + self._v5_trailer()
+        )
         response_frame[5] = (response_frame[5] + 1) & 0xFF
-        response_frame[-2] = self._calculate_v5_frame_checksum(response_frame)
-        return response_frame
+        return response_frame + self._v5_trailer(response_frame)
 
     def _send_receive_v5_frame(self, data_logging_stick_frame: bytes) -> bytes:
         """
