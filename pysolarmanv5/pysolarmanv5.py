@@ -121,8 +121,8 @@ class PySolarmanV5:
         # Define and construct V5 request frame structure.
         self.v5_start = bytes.fromhex("A5")
         self.v5_length = bytes.fromhex("0000")  # placeholder value
-        self.v5_magic = bytes.fromhex("10")
         self.v5_control_codes = CONTROL_CODE.__dict__.values()
+        self.v5_control_code_suffix = bytes.fromhex("10")
         self.v5_seq = bytes.fromhex("0000")  # placeholder value
         self.v5_serial = struct.pack("<I", self.serial)
         self.v5_frametype = bytes.fromhex("02")
@@ -176,7 +176,7 @@ class PySolarmanV5:
         return bytearray(
             self.v5_start
             + struct.pack("<H", length)
-            + self.v5_magic
+            + self.v5_control_code_suffix
             + struct.pack("<B", control)
             + seq
             + self.v5_serial
