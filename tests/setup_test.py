@@ -94,9 +94,8 @@ class MockDatalogger(PySolarmanV5):
             + modbus_frame
         )
 
-        v5_frame = v5_header + v5_payload + self._v5_trailer()
-        v5_frame[-2] = self._calculate_v5_frame_checksum(v5_frame)
-        return v5_frame
+        v5_frame = v5_header + v5_payload
+        return v5_frame + self._v5_trailer(v5_frame)
 
 
 class ServerHandler(socketserver.BaseRequestHandler):
