@@ -1,6 +1,5 @@
 """pysolarmanv5_async.py"""
 
-import time
 import errno
 import struct
 import asyncio
