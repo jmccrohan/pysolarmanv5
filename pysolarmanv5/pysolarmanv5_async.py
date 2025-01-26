@@ -229,14 +229,15 @@ class PySolarmanV5Async(PySolarmanV5):
             loop = asyncio.get_running_loop()
             loop.create_task(self.reconnect())
 
-    async def _send_receive_v5_frame(self, frame: bytes) -> bytes:
-        """Send V5 frame to the data logger and receive response
+    async def _send_receive_frame(self, frame: bytes) -> bytes:
+        """
+        Send frame to the data logger and receive response
 
-        :param frame: V5 frame to transmit
+        :param frame: Frame to transmit
         :type frame: bytes
-        :return: V5 frame received
+        :return: Received frame
         :rtype: bytes
-        :raises NoSocketAvailableError: When the connection to data logging stick is closed.
+        :raises NoSocketAvailableError: When the connection to data logger is closed.
             Can occur even when auto-reconnect is enabled.
 
         """
@@ -282,7 +283,7 @@ class PySolarmanV5Async(PySolarmanV5):
 
         """
         v5_request_frame = self._v5_frame_encoder(mb_request_frame)
-        v5_response_frame = await self._send_receive_v5_frame(v5_request_frame)
+        v5_response_frame = await self._send_receive_frame(v5_request_frame)
         mb_response_frame = self._v5_frame_decoder(v5_response_frame)
         return mb_response_frame
 

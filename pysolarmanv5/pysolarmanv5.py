@@ -351,14 +351,16 @@ class PySolarmanV5:
         response_frame[5] = (response_frame[5] + 1) & 0xFF
         return response_frame + self._v5_trailer(response_frame)
 
-    def _send_receive_v5_frame(self, frame: bytes) -> bytes:
+    def _send_receive_frame(self, frame: bytes) -> bytes:
         """
-        Send V5 frame to the data logger and receive response
+        Send frame to the data logger and receive response
 
-        :param frame: V5 frame to transmit
+        :param frame: Frame to transmit
         :type frame: bytes
-        :return: V5 frame received
+        :return: Received frame
         :rtype: bytes
+        :raises NoSocketAvailableError: When the connection to data logger is closed.
+            Can occur even when auto-reconnect is enabled.
 
         """
         self.log.debug("[%s] SENT: %s", self.serial, frame.hex(" "))
@@ -553,7 +555,7 @@ class PySolarmanV5:
 
         """
         v5_request_frame = self._v5_frame_encoder(mb_request_frame)
-        v5_response_frame = self._send_receive_v5_frame(v5_request_frame)
+        v5_response_frame = self._send_receive_frame(v5_request_frame)
         mb_response_frame = self._v5_frame_decoder(v5_response_frame)
         return mb_response_frame
 
