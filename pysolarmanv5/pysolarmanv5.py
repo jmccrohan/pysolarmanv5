@@ -406,7 +406,7 @@ class PySolarmanV5:
 
     def _received_frame_response(self, frame: bytes) -> tuple[bool, bytearray]:
         """
-        Return response to frames with control codes 0x41 (handshake), 0x42 (data), 0x43 (wifi), 0x47 (heartbeat) and 0x48 (report)
+        Return response to frames with control codes 0x41 (handshake), 0x42 (data), 0x43 (info), 0x47 (heartbeat) and 0x48 (report)
 
         :param frame: V5 request frame
         :type frame: bytes
