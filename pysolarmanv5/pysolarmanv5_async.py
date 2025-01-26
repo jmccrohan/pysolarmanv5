@@ -180,7 +180,7 @@ class PySolarmanV5Async(PySolarmanV5):
 
         :param frame: V5 request frame
         :type frame: bytes
-        :return: Continue processing frames?
+        :return: Continue processing frame?
         :rtype: bool
 
         """
@@ -243,27 +243,27 @@ class PySolarmanV5Async(PySolarmanV5):
             loop = asyncio.get_running_loop()
             loop.create_task(self.reconnect())
 
-    async def _send_receive_v5_frame(self, data_logging_stick_frame):
-        """Send v5 frame to the data logger and receive response
+    async def _send_receive_v5_frame(self, frame: bytes) -> bytes:
+        """Send V5 frame to the data logger and receive response
 
-        :param data_logging_stick_frame: V5 frame to transmit
-        :type data_logging_stick_frame: bytes
+        :param frame: V5 frame to transmit
+        :type frame: bytes
         :return: V5 frame received
         :rtype: bytes
         :raises NoSocketAvailableError: When the connection to data logging stick is closed.
             Can occur even when auto-reconnect is enabled.
 
         """
-        self.log.debug("[%s] SENT: %s", self.serial, data_logging_stick_frame.hex(" "))
+        self.log.debug("[%s] SENT: %s", self.serial, frame.hex(" "))
         self.data_wanted_ev.set()
-        self._last_frame = data_logging_stick_frame
+        self._last_frame = frame
         try:
-            self.writer.write(data_logging_stick_frame)
+            self.writer.write(frame)
             await self.writer.drain()
-            v5_response = await asyncio.wait_for(
+            response_frame = await asyncio.wait_for(
                 self.data_queue.get(), self.socket_timeout
             )
-            if v5_response == b"":
+            if response_frame == b"":
                 raise NoSocketAvailableError(
                     "Connection closed on read. Retry if auto-reconnect is enabled"
                 )
@@ -283,8 +283,8 @@ class PySolarmanV5Async(PySolarmanV5):
         finally:
             self.data_wanted_ev.clear()
 
-        self.log.debug("[%s] RECD: %s", self.serial, v5_response.hex(" "))
-        return v5_response
+        self.log.debug("[%s] RECD: %s", self.serial, response_frame.hex(" "))
+        return response_frame
 
     async def _send_receive_modbus_frame(self, mb_request_frame):
         """Encodes mb_frame, sends/receives v5_frame, decodes response
