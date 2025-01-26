@@ -351,26 +351,26 @@ class PySolarmanV5:
         response_frame[5] = (response_frame[5] + 1) & 0xFF
         return response_frame + self._v5_trailer(response_frame)
 
-    def _send_receive_v5_frame(self, data_logging_stick_frame: bytes) -> bytes:
+    def _send_receive_v5_frame(self, frame: bytes) -> bytes:
         """
-        Send v5 frame to the data logger and receive response
+        Send V5 frame to the data logger and receive response
 
-        :param data_logging_stick_frame: V5 frame to transmit
-        :type data_logging_stick_frame: bytes
+        :param frame: V5 frame to transmit
+        :type frame: bytes
         :return: V5 frame received
         :rtype: bytes
 
         """
-        self.log.debug("[%s] SENT: %s", self.serial, data_logging_stick_frame.hex(" "))
+        self.log.debug("[%s] SENT: %s", self.serial, frame.hex(" "))
         if not self._reader_thr.is_alive():
             raise NoSocketAvailableError("Connection already closed.")
-        self.sock.sendall(data_logging_stick_frame)
+        self.sock.sendall(frame)
         self._data_wanted.set()
-        self._last_frame = data_logging_stick_frame
-        v5_response = b""
+        self._last_frame = frame
+        response_frame = b""
         try:
-            v5_response = self._data_queue.get(timeout=self.socket_timeout)
-            if v5_response == b"":
+            response_frame = self._data_queue.get(timeout=self.socket_timeout)
+            if response_frame == b"":
                 raise NoSocketAvailableError("Connection closed on read")
             self._data_wanted.clear()
         except (queue.Empty, TimeoutError):
@@ -382,8 +382,8 @@ class PySolarmanV5:
                 raise TimeoutError from exc
             raise
 
-        self.log.debug("[%s] RECD: %s", self.serial, v5_response.hex(" "))
-        return v5_response
+        self.log.debug("[%s] RECD: %s", self.serial, response_frame.hex(" "))
+        return response_frame
 
     def _received_frame_is_valid(self, frame: bytes) -> bool:
         """
@@ -410,7 +410,7 @@ class PySolarmanV5:
 
         :param frame: V5 request frame
         :type frame: bytes
-        :return: Continue processing frames?, V5 time response frame
+        :return: Continue processing frame?, V5 time response frame
         :rtype: tuple[bool, bytearray]
 
         """
@@ -431,7 +431,7 @@ class PySolarmanV5:
 
         :param frame: V5 request frame
         :type frame: bytes
-        :return: Continue processing frames?
+        :return: Continue processing frame?
         :rtype: bool
 
         """
