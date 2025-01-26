@@ -163,6 +163,12 @@ class PySolarmanV5Async(PySolarmanV5):
     async def _handle_protocol_frame(self, frame: bytes) -> bool:
         """
         Handles frames with known control codes :func:`_received_frame_response() <pysolarmanv5.PySolarmanV5._received_frame_response>`
+
+        :param frame: V5 request frame
+        :type frame: bytes
+        :return: Continue processing frames?
+        :rtype: bool
+
         """
         do_continue, response_frame = self._received_frame_response(frame)
         if response_frame is not None:
