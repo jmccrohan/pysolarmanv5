@@ -15,7 +15,7 @@ from umodbus.functions import (
     create_function_from_request_pdu,
 )
 
-from pysolarmanv5.pysolarmanv5 import CONTROL_CODE, PySolarmanV5
+from pysolarmanv5.pysolarmanv5 import CONTROL_CODE, PySolarmanV5, V5FrameError
 
 
 _WIN_PLATFORM = True if platform.system() == "Windows" else False
@@ -207,10 +207,13 @@ async def stream_handler(reader: asyncio.StreamReader, writer: asyncio.StreamWri
                 log.debug(f'[AioHandler] Sending frame: {bytes(enc).hex(" ")}')
                 writer.write(bytes(enc))
                 await writer.drain()
+            except V5FrameError as e:
+                """ Close immediately - allows testing with wrong serial numbers, sequence numbers etc. """
+                log.debug(f"[AioHandler] V5FrameError({' '.join(e.args)}). Closing immediately... ")
+                break
             except Exception as e:
                 log.exception(e)
                 writer.write(data)
-
             if cl_packets == 3:
                 # Write counter packet and wait some time to be consumed
                 await random_delay()
