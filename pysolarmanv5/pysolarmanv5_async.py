@@ -208,6 +208,7 @@ class PySolarmanV5Async(PySolarmanV5):
         :return: None
 
         """
+        data = b""
         while True:
             try:
                 data = await self.reader.read(1024)
@@ -234,7 +235,7 @@ class PySolarmanV5Async(PySolarmanV5):
                 self.log.debug("Data received but nobody waits for it... Discarded")
         self.reader = None
         self.writer = None
-        # self._send_data(b"")
+
         if self._needs_reconnect:
             self.log.debug(
                 "[%s] Auto reconnect enabled. Will try to restart the socket reader",
@@ -242,6 +243,9 @@ class PySolarmanV5Async(PySolarmanV5):
             )
             loop = asyncio.get_running_loop()
             loop.create_task(self.reconnect())
+        else:
+            if self.data_wanted_ev.is_set():
+               self._send_data(data)
 
     async def _send_receive_frame(self, frame: bytes) -> bytes:
         """
@@ -272,7 +276,7 @@ class PySolarmanV5Async(PySolarmanV5):
             raise NoSocketAvailableError("Connection already closed") from exc
         except NoSocketAvailableError:
             raise
-        except TimeoutError:
+        except asyncio.exceptions.TimeoutError:
             raise
         except OSError as exc:
             if exc.errno == errno.EHOSTUNREACH:
