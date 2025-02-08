@@ -276,7 +276,7 @@ class PySolarmanV5Async(PySolarmanV5):
             raise NoSocketAvailableError("Connection already closed") from exc
         except NoSocketAvailableError:
             raise
-        except TimeoutError:
+        except asyncio.exceptions.TimeoutError:
             raise
         except OSError as exc:
             if exc.errno == errno.EHOSTUNREACH:
