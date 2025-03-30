@@ -70,7 +70,7 @@ async def run_proxy(
         await server.serve_forever()
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(
         prog="solarman rtu proxy",
         description="A Modbus RTU over TCP Proxy for Solarman loggers",
@@ -92,3 +92,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     asyncio.run(run_proxy(args.bind, args.port, args.logger, args.serial))
+
+
+if __name__ == "__main__":
+    main()

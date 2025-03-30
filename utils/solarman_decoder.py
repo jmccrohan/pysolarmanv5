@@ -213,7 +213,7 @@ class V5Frame:
         return msg
 
 
-if __name__ == "__main__":
+def main():
     frame = sys.argv[1:]
     solarman = V5Frame("".join(frame))
 
@@ -249,3 +249,7 @@ if __name__ == "__main__":
             f"Checksum: {solarman.frame_crc} hex: {solarman.frame_crc:02x} - RTU start at: {solarman.rtu_head}"
         )
         print(solarman.payload_string())
+
+
+if __name__ == "__main__":
+    main()

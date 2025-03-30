@@ -94,7 +94,7 @@ async def aio_main(probes: List[SolarmanProbe]):
             print(f"{p}")
 
 
-if __name__ == "__main__":
+def main():
     if platform.system().lower() != "linux":
         print(f"This platform is not supported")
         sys.exit(1)
@@ -110,3 +110,7 @@ if __name__ == "__main__":
     loop = asyncio.new_event_loop()
     probes = [SolarmanProbe(ip) for ip in ips]
     loop.run_until_complete(aio_main(probes))
+
+
+if __name__ == "__main__":
+    main()
