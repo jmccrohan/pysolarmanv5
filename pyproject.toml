@@ -4,13 +4,12 @@ version = "3.0.6"
 description = "A Python library for interacting with Solarman (IGEN-Tech) v5 based Solar Data Loggers"
 readme = "README.md"
 requires-python = ">=3.8"
-license = {text = "MIT License"}
+license = "MIT"
 authors = [{name = "Jonathan McCrohan", email = "jmccrohan@gmail.com"}]
 keywords = ["solarman", "igen-tech", "modbus", "solar", "inverter", "solarmanv5"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Topic :: Utilities",
-    "License :: OSI Approved :: MIT License",
 ]
 dependencies = [
     "umodbus",
