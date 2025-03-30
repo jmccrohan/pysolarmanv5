@@ -1,4 +1,5 @@
-""" A basic client demonstrating how to use pysolarmanv5."""
+"""A basic client demonstrating how to use pysolarmanv5."""
+
 from pysolarmanv5 import PySolarmanV5
 
 
@@ -40,6 +41,7 @@ def main():
     )
 
     modbus.disconnect()
+
 
 if __name__ == "__main__":
     main()

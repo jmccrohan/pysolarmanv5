@@ -1,4 +1,4 @@
-""" Parse and decode V5 frames passed via argv
+"""Parse and decode V5 frames passed via argv
 
 user@host:~/src/pysolarmanv5$ ./venv/bin/python utils/solarman_decoder.py a5 17 00 10 45 bb 00 b2 6e 3c 6a 02 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01 03 00 03 00 05 75 c9 39 15
 Frame start: a5 (valid: True)
@@ -16,11 +16,11 @@ Offset Time: 0
 Frame Time: 1970-01-01 00:00:00+00:00
 Checksum: 30153 hex: 75c9 - RTU start at: 0103000300
 ========== RTU Payload - [Request] ==========
-	Slave address: 1
-	Function code: 3
-	CRC: 75c9 (valid: True)
-	Request Start Addr: 3 (03)
-	Request Quantity: 5 (05)
+        Slave address: 1
+        Function code: 3
+        CRC: 75c9 (valid: True)
+        Request Start Addr: 3 (03)
+        Request Quantity: 5 (05)
 
 """
 
