@@ -76,11 +76,11 @@ def main():
         description="A Modbus RTU over TCP Proxy for Solarman loggers",
     )
     parser.add_argument(
-        "-b", "--bind", default="0.0.0.0", help="The ip address to listen on"
+        "-b", "--bind", default="0.0.0.0", help="The address to listen on"
     )
     parser.add_argument("-p", "--port", default=1502, help="The TCP port to listen on")
     parser.add_argument(
-        "-l", "--logger", required=True, help="The address of the logger"
+        "-l", "--logger", required=True, help="The IP address of the logger"
     )
     parser.add_argument(
         "-s",

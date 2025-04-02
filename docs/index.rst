@@ -108,6 +108,8 @@ To install the latest development version from git, run:
 
    pip install git+https://github.com/jmccrohan/pysolarmanv5.git
 
+This will also install the tools from the `utils <./utils>`_ directory.
+
 Projects using pysolarmanv5
 ---------------------------
 * `davidrapan/ha-solarman <https://github.com/davidrapan/ha-solarman>`_
