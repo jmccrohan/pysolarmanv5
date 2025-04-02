@@ -25,7 +25,16 @@ Solarman Scan Utility
 
 .. code-block:: console
 
-    user@host:~ $ solarman-scan
+    user@host:~ $ solarman-scan -h
+    usage: solarman-scan [-h] broadcast
+
+    Scanner for IGEN/Solarman dataloggers
+
+    positional arguments:
+      broadcast   Network broadcast address
+
+    options:
+      -h, --help  show this help message and exit
 
 Solarman Unicast Scanner
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -39,4 +48,13 @@ Solarman Decoder
 
 .. code-block:: console
 
-    user@host:~ $ solarman-decoder
+    user@host:~ $ solarman-decoder -h
+    usage: solarman-decoder [-h] frame_hex [frame_hex ...]
+
+    Decode a Solarman V5 frame
+
+    positional arguments:
+      frame_hex   The bytes of the frame to decode in hexadecimal format e.g. a5 17 ...
+
+    options:
+      -h, --help  show this help message and exit
