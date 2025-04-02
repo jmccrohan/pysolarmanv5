@@ -28,11 +28,9 @@ def scan(broadcast_address: str):
 
 def main():
     parser = ArgumentParser(
-        "solarman-scan", epilog="Scanner for IGEN/Solarman dataloggers"
+        "solarman-scan", description="Scanner for IGEN/Solarman dataloggers"
     )
-    parser.add_argument(
-        "-b", "--broadcast", required=True, help="Network broadcast address"
-    )
+    parser.add_argument("broadcast", help="Network broadcast address")
     opts = parser.parse_args()
     scan(opts.broadcast)
 
