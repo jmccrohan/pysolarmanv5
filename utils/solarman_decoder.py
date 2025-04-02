@@ -24,6 +24,7 @@ Checksum: 30153 hex: 75c9 - RTU start at: 0103000300
 
 """
 
+import argparse
 import datetime
 import enum
 import sys
@@ -213,9 +214,8 @@ class V5Frame:
         return msg
 
 
-def main():
-    frame = sys.argv[1:]
-    solarman = V5Frame("".join(frame))
+def decode(frame_hex: [str]) -> V5Frame:
+    solarman = V5Frame("".join(frame_hex))
 
     print(
         f"Frame start: {solarman.frame_start:02x} (valid: {solarman.frame_start_valid})"
@@ -249,6 +249,20 @@ def main():
             f"Checksum: {solarman.frame_crc} hex: {solarman.frame_crc:02x} - RTU start at: {solarman.rtu_head}"
         )
         print(solarman.payload_string())
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        prog="solarman-decoder",
+        description="Decode a Solarman V5 frame",
+    )
+    parser.add_argument(
+        "frame_hex",
+        nargs="+",
+        help="The bytes of the frame to decode in hexadecimal format e.g. a5 17 ...",
+    )
+    opts = parser.parse_args()
+    decode(opts.frame_hex)
 
 
 if __name__ == "__main__":
