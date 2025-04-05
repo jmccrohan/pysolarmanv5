@@ -197,7 +197,7 @@ class PySolarmanV5:
         :param seq: V5 sequence number
         :type seq: bytes
         :return: V5 frame header
-        :rtype: bytearray     
+        :rtype: bytearray
 
         """
         return bytearray(
@@ -216,10 +216,12 @@ class PySolarmanV5:
         :param data: data for checksum calculation
         :type data: bytes
         :return: V5 frame trailer
-        :rtype: bytearray     
+        :rtype: bytearray
 
         """
-        return bytearray(struct.pack("<B", self._calculate_checksum(data[1:])) + self.v5_end)
+        return bytearray(
+            struct.pack("<B", self._calculate_checksum(data[1:])) + self.v5_end
+        )
 
     def _get_next_sequence_number(self) -> int:
         """
@@ -343,10 +345,12 @@ class PySolarmanV5:
         :rtype: bytearray
 
         """
-        response_frame = self._v5_header(10, self._get_response_code(frame[4]), frame[5:7]) + bytearray(
-            + struct.pack("<H", 0x0100) # Frame & sensor type?
+        response_frame = self._v5_header(
+            10, self._get_response_code(frame[4]), frame[5:7]
+        ) + bytearray(
+            +struct.pack("<H", 0x0100)  # Frame & sensor type?
             + struct.pack("<I", int(time.time()))
-            + struct.pack("<I", 0) # Offset?
+            + struct.pack("<I", 0)  # Offset?
         )
         response_frame[5] = (response_frame[5] + 1) & 0xFF
         return response_frame + self._v5_trailer(response_frame)
@@ -421,10 +425,17 @@ class PySolarmanV5:
         if frame[4] != CONTROL_CODE.REQUEST and frame[4] in self.v5_control_codes:
             do_continue = False
             # Maybe do_continue = True for CONTROL_CODE.DATA|INFO|REPORT and thus process packets in the future?
-            control_name = [i for i in CONTROL_CODE.__dict__ if CONTROL_CODE.__dict__[i]==frame[4]][0]
+            control_name = [
+                i for i in CONTROL_CODE.__dict__ if CONTROL_CODE.__dict__[i] == frame[4]
+            ][0]
             self.log.debug("[%s] V5_%s: %s", self.serial, control_name, frame.hex(" "))
             response_frame = self._v5_time_response_frame(frame)
-            self.log.debug("[%s] V5_%s RESP: %s", self.serial, control_name, response_frame.hex(" "))
+            self.log.debug(
+                "[%s] V5_%s RESP: %s",
+                self.serial,
+                control_name,
+                response_frame.hex(" "),
+            )
         return do_continue, response_frame
 
     def _handle_protocol_frame(self, frame: bytes) -> bool:

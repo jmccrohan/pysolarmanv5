@@ -1,4 +1,4 @@
-""" Scan local network for Solarman data loggers """
+"""Scan local network for Solarman data loggers"""
 
 import socket
 from argparse import ArgumentParser

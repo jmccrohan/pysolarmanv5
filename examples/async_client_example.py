@@ -1,4 +1,5 @@
-""" A basic client demonstrating how to use the async version of pysolarmanv5."""
+"""A basic client demonstrating how to use the async version of pysolarmanv5."""
+
 from pysolarmanv5 import PySolarmanV5Async
 import asyncio
 
@@ -11,7 +12,12 @@ async def main():
     respectively.
     """
     modbus = PySolarmanV5Async(
-        '192.168.1.121', 1234567890, port=8899, mb_slave_id=1, verbose=False, auto_reconnect=True
+        "192.168.1.121",
+        1234567890,
+        port=8899,
+        mb_slave_id=1,
+        verbose=False,
+        auto_reconnect=True,
     )
     await modbus.connect()
 
@@ -27,14 +33,17 @@ async def main():
     """Query single input register, apply scaling, result as a float"""
 
     print(
-        await modbus.read_input_register_formatted(register_addr=33035, quantity=1, scale=0.1)
+        await modbus.read_input_register_formatted(
+            register_addr=33035, quantity=1, scale=0.1
+        )
     )
 
     """Query two input registers, shift first register up by 16 bits, result as a signed int, """
     print(
-        await modbus.read_input_register_formatted(register_addr=33079, quantity=2, signed=1)
+        await modbus.read_input_register_formatted(
+            register_addr=33079, quantity=2, signed=1
+        )
     )
-
 
     """Query single holding register, apply bitmask and bitshift left (extract bit1 from register)"""
     print(
@@ -44,6 +53,7 @@ async def main():
     )
 
     await modbus.disconnect()
+
 
 if __name__ == "__main__":
     asyncio.run(main())

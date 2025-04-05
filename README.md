@@ -48,6 +48,12 @@ To install the latest development version from git, run:
 
 This will also install the tools from the [utils](/utils) directory.
 
+## Docker
+
+To run the tools in the docker image, run:
+
+`docker run --rm ghcr.io/jmccrohan/pysolarmanv5:latest`
+
 ## Projects using pysolarmanv5
 
 - [davidrapan/ha-solarman](https://github.com/davidrapan/ha-solarman)

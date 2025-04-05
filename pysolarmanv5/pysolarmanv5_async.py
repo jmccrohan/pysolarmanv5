@@ -245,7 +245,7 @@ class PySolarmanV5Async(PySolarmanV5):
             loop.create_task(self.reconnect())
         else:
             if self.data_wanted_ev.is_set():
-               self._send_data(data)
+                self._send_data(data)
 
     async def _send_receive_frame(self, frame: bytes) -> bytes:
         """

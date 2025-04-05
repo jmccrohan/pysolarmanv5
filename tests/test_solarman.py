@@ -52,4 +52,3 @@ def test_sync():
         solarman.disconnect()
     except:
         pass
-

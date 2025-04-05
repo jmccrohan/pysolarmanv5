@@ -14,7 +14,11 @@ def test_async():
     async def wrapper():
         log.debug("Async starting")
         solarman = PySolarmanV5Async(
-            "127.0.0.1", 2612749371, auto_reconnect=True, verbose=True, socket_timeout=10
+            "127.0.0.1",
+            2612749371,
+            auto_reconnect=True,
+            verbose=True,
+            socket_timeout=10,
         )
         await solarman.connect()
         log.debug("Async connected!!!")
@@ -58,14 +62,17 @@ def test_async_no_socket_available():
     async def wrapper():
         log.debug("Async NoSocketAvailable Test - starting")
         solarman = PySolarmanV5Async(
-            "127.0.0.1", 2612749271, auto_reconnect=False, verbose=True, socket_timeout=5
+            "127.0.0.1",
+            2612749271,
+            auto_reconnect=False,
+            verbose=True,
+            socket_timeout=5,
         )
         await solarman.connect()
         log.debug("Async connected!!!")
         with pytest.raises(NoSocketAvailableError) as einfo:
             res = await solarman.read_holding_registers(20, 4)
         assert einfo.type is NoSocketAvailableError
-
 
     try:
         loop = asyncio.get_running_loop()
@@ -78,14 +85,17 @@ def test_async_timeout_error():
     async def wrapper():
         log.debug("Async TimeoutError Test - starting")
         solarman = PySolarmanV5Async(
-            "127.0.0.1", 2612749271, auto_reconnect=True, verbose=True, socket_timeout=1.5
+            "127.0.0.1",
+            2612749271,
+            auto_reconnect=True,
+            verbose=True,
+            socket_timeout=1.5,
         )
         await solarman.connect()
         log.debug("Async connected!!!")
         with pytest.raises(asyncio.exceptions.TimeoutError) as einfo:
             res = await solarman.read_holding_registers(20, 4)
         assert einfo.type is asyncio.exceptions.TimeoutError
-
 
     try:
         loop = asyncio.get_running_loop()

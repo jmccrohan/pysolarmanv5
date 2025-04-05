@@ -83,7 +83,9 @@ class MockDatalogger(PySolarmanV5):
             "<BB", self.sequence_number, self._get_next_sequence_number()
         )
 
-        v5_header = self._v5_header(length, self._get_response_code(CONTROL_CODE.REQUEST), self.v5_seq)
+        v5_header = self._v5_header(
+            length, self._get_response_code(CONTROL_CODE.REQUEST), self.v5_seq
+        )
 
         v5_payload = bytearray(
             self.v5_frametype
@@ -208,8 +210,10 @@ async def stream_handler(reader: asyncio.StreamReader, writer: asyncio.StreamWri
                 writer.write(bytes(enc))
                 await writer.drain()
             except V5FrameError as e:
-                """ Close immediately - allows testing with wrong serial numbers, sequence numbers etc. """
-                log.debug(f"[AioHandler] V5FrameError({' '.join(e.args)}). Closing immediately... ")
+                """Close immediately - allows testing with wrong serial numbers, sequence numbers etc."""
+                log.debug(
+                    f"[AioHandler] V5FrameError({' '.join(e.args)}). Closing immediately... "
+                )
                 break
             except Exception as e:
                 log.exception(e)
@@ -238,7 +242,6 @@ async def stream_handler(reader: asyncio.StreamReader, writer: asyncio.StreamWri
 
 
 class SolarmanServer(metaclass=_Singleton):
-
     """
     Sync version of the test server
     """

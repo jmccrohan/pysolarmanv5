@@ -1,4 +1,5 @@
-""" Scan Modbus registers to find valid registers"""
+"""Scan Modbus registers to find valid registers"""
+
 from pysolarmanv5 import PySolarmanV5, V5FrameError
 import umodbus.exceptions
 
