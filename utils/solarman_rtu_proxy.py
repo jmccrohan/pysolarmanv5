@@ -78,7 +78,9 @@ def main():
     parser.add_argument(
         "-b", "--bind", default="0.0.0.0", help="The address to listen on"
     )
-    parser.add_argument("-p", "--port", default=1502, help="The TCP port to listen on")
+    parser.add_argument(
+        "-p", "--port", default=1502, type=int, help="The TCP port to listen on"
+    )
     parser.add_argument(
         "-l", "--logger", required=True, help="The IP address of the logger"
     )
