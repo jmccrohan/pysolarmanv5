@@ -348,7 +348,7 @@ class PySolarmanV5:
         response_frame = self._v5_header(
             10, self._get_response_code(frame[4]), frame[5:7]
         ) + bytearray(
-            +struct.pack("<H", 0x0100)  # Frame & sensor type?
+            struct.pack("<H", 0x0100)  # Frame & sensor type?
             + struct.pack("<I", int(time.time()))
             + struct.pack("<I", 0)  # Offset?
         )
