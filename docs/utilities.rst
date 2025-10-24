@@ -2,6 +2,22 @@
 Utilities
 ===================
 
+Solarman TCP Proxy
+^^^^^^^^^^^^^^^^^^
+
+.. code-block:: console
+
+    user@host:~ $ solarman-tcp-proxy -h
+    usage: solarman tcp proxy [-h] [-b BIND] [-p PORT] -l LOGGER -s SERIAL
+
+    A Modbus TCP Proxy for Solarman loggers
+
+    options:
+      -h, --help           show this help message and exit
+      -b, --bind BIND      The address to listen on
+      -p, --port PORT      The TCP port to listen on
+      -l, --logger LOGGER  The IP address of the logger
+      -s, --serial SERIAL  The serial number of the logger
 
 Solarman RTU Proxy
 ^^^^^^^^^^^^^^^^^^
