@@ -46,18 +46,19 @@ async def handle_client(
             unit_id = await reader.readexactly(1)
             pdu = await reader.readexactly(length - 1)  # length includes unit_id
 
-            modbus_rtu = unit_id + pdu + get_crc(unit_id + pdu)
+            slave_id = b'\x01'
+            modbus_rtu = slave_id + pdu + get_crc(slave_id + pdu)
             
             try:
                 # Convert RTU back to TCP
                 reply_rtu = await solarmanv5.send_raw_modbus_frame(modbus_rtu)
 
-                unit_id_reply = reply_rtu[0:1]
+                slave_id_reply = reply_rtu[0:1]
                 pdu_reply = reply_rtu[1:-2]
                 crc_reply = reply_rtu[-2:]
 
                 mbap = struct.pack(">HHH", trans_id, 0, len(pdu_reply) + 1)
-                reply_tcp = mbap + unit_id_reply + pdu_reply
+                reply_tcp = mbap + unit_id + pdu_reply
 
                 writer.write(reply_tcp)
             except:
