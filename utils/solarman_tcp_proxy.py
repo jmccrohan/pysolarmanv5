@@ -17,22 +17,8 @@ import argparse
 import asyncio
 import struct
 from functools import partial
-
+from umodbus.client.serial.redundancy_check import get_crc
 from pysolarmanv5 import PySolarmanV5Async
-
-def modbus_crc(data: bytes) -> bytes:
-    # Compute Modbus RTU CRC16.
-    crc = 0xFFFF
-    for pos in data:
-        crc ^= pos
-        for _ in range(8):
-            if crc & 0x0001:
-                crc >>= 1
-                crc ^= 0xA001
-            else:
-                crc >>= 1
-    # Return in little-endian (LSB first)
-    return struct.pack("<H", crc)
 
 async def handle_client(
     reader: asyncio.StreamReader,
@@ -60,7 +46,7 @@ async def handle_client(
             unit_id = await reader.readexactly(1)
             pdu = await reader.readexactly(length - 1)  # length includes unit_id
 
-            modbus_rtu = unit_id + pdu + modbus_crc(unit_id + pdu)
+            modbus_rtu = unit_id + pdu + get_crc(unit_id + pdu)
             
             try:
                 # Convert RTU back to TCP
