@@ -20,6 +20,7 @@ from functools import partial
 from umodbus.client.serial.redundancy_check import get_crc
 from pysolarmanv5 import PySolarmanV5Async
 
+
 async def handle_client(
     reader: asyncio.StreamReader,
     writer: asyncio.StreamWriter,
@@ -46,9 +47,9 @@ async def handle_client(
             unit_id = await reader.readexactly(1)
             pdu = await reader.readexactly(length - 1)  # length includes unit_id
 
-            slave_id = b'\x01'
+            slave_id = b"\x01"
             modbus_rtu = slave_id + pdu + get_crc(slave_id + pdu)
-            
+
             try:
                 # Convert RTU back to TCP
                 reply_rtu = await solarmanv5.send_raw_modbus_frame(modbus_rtu)
