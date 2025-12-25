@@ -17,8 +17,11 @@ dependencies = [
 
 [project.scripts]
 solarman-decoder = "utils.solarman_decoder:main"
+solarman-discovery = "utils.solarman_discovery:main"
+solarman-discovery = "utils.solarman_discovery_reply:main"
 solarman-rtu-proxy = "utils.solarman_rtu_proxy:main"
 solarman-scan = "utils.solarman_scan:main"
+solarman-tcp-proxy = "utils.solarman_tcp_proxy:main"
 solarman-uni-scan = "utils.solarman_uni_scan:main"
 
 [project.optional-dependencies]
