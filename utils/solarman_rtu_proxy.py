@@ -15,6 +15,7 @@ Can be used with Home Assistant's native Modbus integration using config below:
 
 import argparse
 import asyncio
+import sys
 from functools import partial
 
 from pysolarmanv5 import PySolarmanV5Async
@@ -93,7 +94,11 @@ def main():
     )
     args = parser.parse_args()
 
-    asyncio.run(run_proxy(args.bind, args.port, args.logger, args.serial))
+    try:
+        asyncio.run(run_proxy(args.bind, args.port, args.logger, args.serial))
+    except Exception as e:
+        print(f"Exception: {e}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":

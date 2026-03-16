@@ -1,5 +1,6 @@
 # syntax=docker/dockerfile:1
-FROM python:3.13-alpine
+# alpine causes issues with solarman_rtu_proxy.py: https://stackoverflow.com/a/77780983
+FROM python:3.13-slim
 
 # mount current directory to /app
 # install with pip
